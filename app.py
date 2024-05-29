@@ -14,6 +14,14 @@ import tempfile
 import oletools.oleid
 from langchain.llms import HuggingFaceHub
 import logging
+import matplotlib.pyplot as plt
+import streamlit_authenticator as stauth
+from stauth import Authenticate
+
+import yaml
+from yaml.loader import SafeLoader
+
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -28,6 +36,8 @@ CONFIG = {
     "api_key": os.getenv("OPENAI_API_KEY"),
     "max_retries": 3
 }
+
+
 
 # Utility function to display messages
 def display_message(message, template):
@@ -119,34 +129,50 @@ def analyze_ole_files(ole_files):
             ole_identifier = oletools.oleid.OleID(temp_file_path)
             indicators = ole_identifier.check()
             st.write(f"Results for {ole_file.name}:")
+            risk_levels = {'Low': 0, 'Medium': 0, 'High': 0}
             for indicator in indicators:
+                risk_level = 'Low' if indicator.value == 0 else 'Medium' if indicator.value == 1 else 'High'
+                risk_levels[risk_level] += 1
                 st.write(f'Indicator id={indicator.id} name="{indicator.name}" type={indicator.type} value={repr(indicator.value)}')
                 st.write('Description:', indicator.description)
+                st.write(f'Risk Level: {risk_level}')
                 st.write('')
             os.remove(temp_file_path)
+            visualize_risk_levels(risk_levels)
         except Exception as e:
             logging.error(f"Error analyzing OLE file: {e}")
             st.error(f"Error analyzing OLE file: {e}")
 
+# Function to visualize risk levels
+def visualize_risk_levels(risk_levels):
+    labels = list(risk_levels.keys())
+    sizes = list(risk_levels.values())
+    fig, ax = plt.subplots()
+    ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
+    ax.axis('equal')
+    st.pyplot(fig)
+
 # Function to analyze Python code
 def analyze_python_file(python_file):
-    def run_bandit_analysis(file_path):
+    def run_static_code_analysis(file_path, tool):
         try:
-            result = subprocess.run(['bandit', file_path], capture_output=True, text=True, check=True)
-            st.write("Bandit Analysis Results:")
+            result = subprocess.run([tool, file_path], capture_output=True, text=True, check=True)
+            st.write(f"{tool.capitalize()} Analysis Results:")
             st.write(result.stdout)
         except subprocess.CalledProcessError as e:
-            logging.error(f"Bandit encountered an error: {e.stderr}")
-            st.error(f"Bandit encountered an error: {e.stderr}")
+            logging.error(f"{tool.capitalize()} encountered an error: {e.stderr}")
+            st.error(f"{tool.capitalize()} encountered an error: {e.stderr}")
         except FileNotFoundError:
-            logging.error("Bandit is not installed.")
-            st.error("Bandit is not installed. Please install it using 'pip install bandit'.")
+            logging.error(f"{tool.capitalize()} is not installed.")
+            st.error(f"{tool.capitalize()} is not installed. Please install it using 'pip install {tool}'.")
 
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".py") as temp_file:
             temp_file.write(python_file.read())
             temp_file_path = temp_file.name
-        run_bandit_analysis(temp_file_path)
+        run_static_code_analysis(temp_file_path, 'bandit')
+        run_static_code_analysis(temp_file_path, 'pylint')
+        run_static_code_analysis(temp_file_path, 'flake8')
         os.remove(temp_file_path)
     except Exception as e:
         logging.error(f"Error analyzing Python code: {e}")
@@ -154,36 +180,58 @@ def analyze_python_file(python_file):
 
 # Main function
 def main():
+    
     st.set_page_config(page_title="AppSec", page_icon="random", layout="wide")
     st.write(css, unsafe_allow_html=True)
 
-    if "conversation" not in st.session_state:
-        st.session_state.conversation = None
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = None
+    with open('login_config/config.yaml') as file:
+        config = yaml.load(file, Loader=SafeLoader)
 
-    st.header("AppSec Test Application")
+    authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days'],
+    config['pre-authorized']
+)
+   
+    authenticator.login()
 
-    user_query = st.text_input("User input")
-    if user_query:
-        handle_user_input(user_query)
+    if st.session_state["authentication_status"]:
+        authenticator.logout()
+        st.write(f'Welcome *{st.session_state["name"]}*')
+        st.title('Some content')
+    
 
-    with st.sidebar:
-        st.subheader("PDF with AI")
-        pdf_files = st.file_uploader("Upload your PDFs here and click on 'Process'", accept_multiple_files=True)
-        if st.button("Process") and pdf_files:
-            with st.spinner("Processing"):
-                process_pdf_files(pdf_files)
+        st.header("AppSec Test Application")
+        st.sidebar.subheader(f"Welcome {st.session_state['name']}!")
 
-        st.subheader("OLE Tool")
-        ole_files = st.file_uploader("Upload your file here and click on 'Use OLE Tool'", accept_multiple_files=True)
-        if st.button("Use") and ole_files:
-            analyze_ole_files(ole_files)
+        user_query = st.text_input("User input")
+        if user_query:
+            handle_user_input(user_query)
 
-        st.subheader("Python Code Analyzer")
-        python_file = st.file_uploader("Upload your Python file here and click on 'Analyze'", type='py', accept_multiple_files=False)
-        if st.button("Analyze") and python_file:
-            analyze_python_file(python_file)
+        with st.sidebar:
+            st.subheader("PDF with AI")
+            pdf_files = st.file_uploader("Upload your PDFs here and click on 'Process'", accept_multiple_files=True)
+            if st.button("Process") and pdf_files:
+                with st.spinner("Processing"):
+                    process_pdf_files(pdf_files)
+
+            st.subheader("OLE Tool")
+            ole_files = st.file_uploader("Upload your file here and click on 'Use OLE Tool'", accept_multiple_files=True)
+            if st.button("Use") and ole_files:
+                analyze_ole_files(ole_files)
+
+            st.subheader("Python Code Analyzer")
+            python_file = st.file_uploader("Upload your Python file here and click on 'Analyze'", type='py', accept_multiple_files=False)
+            if st.button("Analyze") and python_file:
+                analyze_python_file(python_file)
+
+
+    elif st.session_state["authentication_status"] is False:
+        st.error('Username/password is incorrect')
+    elif st.session_state["authentication_status"] is None:
+        st.warning('Please enter your username and password')
 
 if __name__ == '__main__':
     main()

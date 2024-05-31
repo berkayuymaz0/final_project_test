@@ -23,7 +23,7 @@ This application is designed to provide various functionalities related to secur
 - OpenAI API Key (sign up at [OpenAI](https://beta.openai.com/signup/) to get your API key)
 
 ### Steps
-    ```
+
 
 1. Create a virtual environment:
     ```sh

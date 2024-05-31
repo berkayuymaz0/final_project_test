@@ -45,3 +45,54 @@ def analyze_ole_files(files):
             st.error("Error analyzing OLE file. Please try again.")
         finally:
             os.remove(temp_file_path)
+
+def check_safety():
+    try:
+        result = subprocess.run(
+            ["safety", "check"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False
+        )
+        return result.stdout, result.stderr
+    except FileNotFoundError:
+        st.write("Safety is not installed. Please install it using 'pip install safety'.")
+    except Exception as e:
+        logger.error(f"Error running safety: {e}")
+        st.error("Error running safety. Please try again.")
+    return "", ""
+
+def check_mypy(file_path):
+    try:
+        result = subprocess.run(
+            ["mypy", file_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False
+        )
+        return result.stdout, result.stderr
+    except FileNotFoundError:
+        st.write("Mypy is not installed. Please install it using 'pip install mypy'.")
+    except Exception as e:
+        logger.error(f"Error running mypy: {e}")
+        st.error("Error running mypy. Please try again.")
+    return "", ""
+
+def check_black(file_path):
+    try:
+        result = subprocess.run(
+            ["black", "--check", file_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False
+        )
+        return result.stdout, result.stderr
+    except FileNotFoundError:
+        st.write("Black is not installed. Please install it using 'pip install black'.")
+    except Exception as e:
+        logger.error(f"Error running black: {e}")
+        st.error("Error running black. Please try again.")
+    return "", ""

@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 from pdf_handler import extract_text_from_pdf, generate_embeddings
 from ai_interaction import ask_question_to_openai, get_ai_suggestions
-from analysis_tools import analyze_ole_files, run_analysis_tool
+from analysis_tools import analyze_ole_files, run_analysis_tool, check_safety, check_mypy, check_black
 import tempfile
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
@@ -27,11 +27,11 @@ def get_relevant_context(chat_history, limit=1000):
     return chat_history_text
 
 def main():
-    st.title("PDF Question Answering and Analysis Tool")
+    st.title("Professional Security Analysis Tool")
 
     sidebar_option = st.sidebar.selectbox(
         "Choose a section",
-        ("PDF Question Answering", "OLE Tool", "Python Code Analysis")
+        ("PDF Question Answering", "OLE Tool", "Python Code Analysis", "Security Scans")
     )
 
     if sidebar_option == "PDF Question Answering":
@@ -114,11 +114,17 @@ def main():
                 bandit_output, bandit_error = run_analysis_tool('bandit', temp_file_path)
                 pylint_output, pylint_error = run_analysis_tool('pylint', temp_file_path)
                 flake8_output, flake8_error = run_analysis_tool('flake8', temp_file_path)
+                mypy_output, mypy_error = check_mypy(temp_file_path)
+                black_output, black_error = check_black(temp_file_path)
+                safety_output, safety_error = check_safety()
 
                 # Combine the outputs
                 combined_output = f"Bandit Output:\n{bandit_output}\nBandit Errors:\n{bandit_error}\n\n"
                 combined_output += f"Pylint Output:\n{pylint_output}\nPylint Errors:\n{pylint_error}\n\n"
                 combined_output += f"Flake8 Output:\n{flake8_output}\nFlake8 Errors:\n{flake8_error}\n\n"
+                combined_output += f"Mypy Output:\n{mypy_output}\nMypy Errors:\n{mypy_error}\n\n"
+                combined_output += f"Black Output:\n{black_output}\nBlack Errors:\n{black_error}\n\n"
+                combined_output += f"Safety Output:\n{safety_output}\nSafety Errors:\n{safety_error}\n\n"
 
                 # Display the combined output
                 st.write("Combined Analysis Results:")
@@ -130,6 +136,16 @@ def main():
                 st.write(ai_suggestions)
             finally:
                 os.remove(temp_file_path)
+
+    elif sidebar_option == "Security Scans":
+        st.subheader("Security Scans")
+        st.write("Run additional security scans on your project.")
+        if st.button("Run Safety Check"):
+            safety_output, safety_error = check_safety()
+            st.write("Safety Check Results:")
+            st.text(safety_output)
+            if safety_error:
+                st.error(safety_error)
 
 if __name__ == "__main__":
     main()

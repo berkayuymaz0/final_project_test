@@ -23,19 +23,14 @@ This application is designed to provide various functionalities related to secur
 - OpenAI API Key (sign up at [OpenAI](https://beta.openai.com/signup/) to get your API key)
 
 ### Steps
-
-1. Clone the repository:
-    ```sh
-    git clone https://github.com/yourusername/pdf-question-answering-tool.git
-    cd pdf-question-answering-tool
     ```
 
-2. Create a virtual environment:
+1. Create a virtual environment:
     ```sh
     python -m venv venv
     ```
 
-3. Activate the virtual environment:
+2. Activate the virtual environment:
 
     - On Windows:
       ```sh
@@ -46,17 +41,17 @@ This application is designed to provide various functionalities related to secur
       source venv/bin/activate
       ```
 
-4. Install the required packages:
+3. Install the required packages:
     ```sh
     pip install -r requirements.txt
     ```
 
-5. Create a `.env` file in the project directory and add your OpenAI API key:
+4. Create a `.env` file in the project directory and add your OpenAI API key:
     ```env
     OPENAI_API_KEY=your_openai_api_key
     ```
 
-6. Run the application:
+5. Run the application:
     ```sh
     streamlit run app.py
     ```

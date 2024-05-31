@@ -1,86 +1,50 @@
 import streamlit as st
-from dotenv import load_dotenv
-from PyPDF2 import PdfReader
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.chat_models import ChatOpenAI
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationalRetrievalChain
-from htmlTemplates import css, bot_template, user_template
-import subprocess
+import PyPDF2
+import openai
 import os
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+from dotenv import load_dotenv
+from datetime import datetime
+import subprocess
 import tempfile
 import oletools.oleid
 import logging
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Load environment variables from .env file
+load_dotenv()
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
-def get_pdf_text(pdf_docs):
+logger = logging.getLogger()
+logging.basicConfig(level=logging.ERROR)
+
+def extract_text_from_pdf(file):
+    pdf_reader = PyPDF2.PdfReader(file)
     text = ""
-    try:
-        for pdf in pdf_docs:
-            pdf_reader = PdfReader(pdf)
-            for page in pdf_reader.pages:
-                text += page.extract_text()
-    except Exception as e:
-        logger.error(f"Error reading PDF: {e}")
-        st.error("Error reading PDF. Please try again.")
+    for page_num in range(len(pdf_reader.pages)):
+        page = pdf_reader.pages[page_num]
+        text += page.extract_text()
     return text
 
-def get_text_chunks(text):
-    try:
-        text_splitter = CharacterTextSplitter(
-            separator="\n",
-            chunk_size=1000,
-            chunk_overlap=200,
-            length_function=len
-        )
-        chunks = text_splitter.split_text(text)
-    except Exception as e:
-        logger.error(f"Error splitting text: {e}")
-        st.error("Error processing text. Please try again.")
-        chunks = []
-    return chunks
+@st.cache_data
+def generate_embeddings(text):
+    response = openai.Embedding.create(
+        model="text-embedding-ada-002",
+        input=text
+    )
+    embeddings = np.array([data['embedding'] for data in response['data']])
+    return embeddings
 
-def get_vectorstore(text_chunks):
-    try:
-        embeddings = OpenAIEmbeddings()
-        vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
-    except Exception as e:
-        logger.error(f"Error creating vectorstore: {e}")
-        st.error("Error creating vectorstore. Please try again.")
-        vectorstore = None
-    return vectorstore
-
-def get_conversation_chain(vectorstore):
-    try:
-        llm = ChatOpenAI()
-        memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
-        conversation_chain = ConversationalRetrievalChain.from_llm(
-            llm=llm,
-            retriever=vectorstore.as_retriever(),
-            memory=memory
-        )
-    except Exception as e:
-        logger.error(f"Error creating conversation chain: {e}")
-        st.error("Error creating conversation chain. Please try again.")
-        conversation_chain = None
-    return conversation_chain
-
-def handle_userinput(user_question):
-    try:
-        response = st.session_state.conversation({'question': user_question})
-        st.session_state.chat_history = response['chat_history']
-
-        for i, message in enumerate(st.session_state.chat_history):
-            template = user_template if i % 2 == 0 else bot_template
-            st.write(template.replace("{{MSG}}", message.content), unsafe_allow_html=True)
-    except Exception as e:
-        logger.error(f"Error handling user input: {e}")
-        st.error("Error processing user input. Please try again.")
+def ask_question_to_openai(question, context):
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": f"{context}\n\nQ: {question}\nA:"}
+        ]
+    )
+    answer = response['choices'][0]['message']['content'].strip()
+    return answer
 
 def run_analysis_tool(tool_name, file_path):
     try:
@@ -120,60 +84,103 @@ def analyze_ole_files(files):
         finally:
             os.remove(temp_file_path)
 
-def process_pdfs(pdf_docs):
-    with st.spinner("Processing"):
-        raw_text = get_pdf_text(pdf_docs)
-        text_chunks = get_text_chunks(raw_text)
-        vectorstore = get_vectorstore(text_chunks)
-        if vectorstore:
-            st.session_state.conversation = get_conversation_chain(vectorstore)
-
-def ensure_conversation_chain():
-    if "conversation" not in st.session_state or st.session_state.conversation is None:
-        # Initialize conversation chain with an empty vectorstore if not already initialized
-        st.session_state.conversation = get_conversation_chain(get_vectorstore([]))
-
 def get_ai_suggestions(combined_output):
-    try:
-        ensure_conversation_chain()  # Ensure conversation chain is initialized
-
-        response = st.session_state.conversation({'question': f"Please provide suggestions based on the following analysis results:\n{combined_output}"})
-        suggestions = response['chat_history'][-1].content
-        return suggestions
-    except Exception as e:
-        logger.error(f"Error getting AI suggestions: {e}")
-        return "Error getting AI suggestions. Please try again."
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a code analysis expert."},
+            {"role": "user", "content": f"Here are the results of the code analysis:\n{combined_output}\nPlease provide suggestions for improvement."}
+        ]
+    )
+    suggestions = response['choices'][0]['message']['content'].strip()
+    return suggestions
 
 def main():
-    load_dotenv()
-    st.set_page_config(page_title="AppSec", page_icon="random", layout="wide")
-    st.write(css, unsafe_allow_html=True)
+    st.title("PDF Question Answering and Analysis Tool")
 
-    if "conversation" not in st.session_state:
-        st.session_state.conversation = None
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = None
+    sidebar_option = st.sidebar.selectbox(
+        "Choose a section",
+        ("PDF Question Answering", "OLE Tool", "Python Code Analysis")
+    )
 
-    st.header("test_app")
-    user_question = st.text_input("user input")
-    if user_question:
-        if st.session_state.conversation:
-            handle_userinput(user_question)
-        else:
-            st.error("Please process a PDF first to initialize the conversation chain.")
+    if sidebar_option == "PDF Question Answering":
+        st.subheader("PDF Question Answering")
+        uploaded_file = st.file_uploader("Upload a PDF file", type="pdf")
 
-    with st.sidebar:
-        st.subheader("Pdf with AI")
-        pdf_docs = st.file_uploader("Upload your PDFs here and click on 'Process'", accept_multiple_files=True)
-        if st.button("Process") and pdf_docs:
-            process_pdfs(pdf_docs)
+        if "chat_history" not in st.session_state:
+            st.session_state.chat_history = []
 
-        st.subheader("Ole Tool")
-        ole_files = st.file_uploader("Upload your file here and click on 'use oletool'", accept_multiple_files=True)
-        if st.button("Use") and ole_files:
+        if "first_question_asked" not in st.session_state:
+            st.session_state.first_question_asked = False
+
+        if uploaded_file is not None:
+            with st.spinner('Extracting text from PDF...'):
+                document_text = extract_text_from_pdf(uploaded_file)
+            st.success("PDF content successfully extracted!")
+            st.write(f"Filename: {uploaded_file.name}, Size: {uploaded_file.size / 1024:.2f} KB")
+
+            chunks = document_text.split("\n\n")
+            embeddings = generate_embeddings(chunks)
+
+            if not st.session_state.first_question_asked:
+                question = st.text_input("Ask a question about the PDF content", placeholder="Type your question here")
+
+                if st.button("Ask"):
+                    if question:
+                        with st.spinner('Generating response...'):
+                            question_embedding = generate_embeddings([question])[0]
+                            similarities = cosine_similarity([question_embedding], embeddings)[0]
+                            most_relevant_chunk = chunks[np.argmax(similarities)]
+
+                            answer = ask_question_to_openai(question, most_relevant_chunk)
+                            st.session_state.chat_history.append({
+                                "question": question,
+                                "answer": answer,
+                                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            })
+                            st.session_state.first_question_asked = True
+                        st.experimental_rerun()
+
+            if st.session_state.first_question_asked:
+                follow_up_question = st.text_area("Ask a follow-up question about the chat history", placeholder="Type your follow-up question here")
+
+                if st.button("Ask Follow-up"):
+                    if follow_up_question:
+                        with st.spinner('Generating response...'):
+                            chat_history_text = "\n".join([f"Q: {chat['question']}\nA: {chat['answer']}" for chat in st.session_state.chat_history])
+                            follow_up_answer = ask_question_to_openai(follow_up_question, chat_history_text)
+                            st.session_state.chat_history.append({
+                                "question": follow_up_question,
+                                "answer": follow_up_answer,
+                                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            })
+
+            if st.session_state.chat_history:
+                st.write("### Chat History")
+                chat_history_html = ""
+                for i, chat in enumerate(st.session_state.chat_history):
+                    chat_history_html += f"""
+                    <div style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px;">
+                        <strong>Q{i+1}:</strong> {chat['question']}<br>
+                        <strong>A{i+1}:</strong> {chat['answer']}<br>
+                        <small><i>{chat['timestamp']}</i></small>
+                    </div>
+                    """
+                st.markdown(chat_history_html, unsafe_allow_html=True)
+
+            if st.button("Clear Chat History"):
+                st.session_state.chat_history = []
+                st.session_state.first_question_asked = False
+                st.experimental_rerun()
+
+    elif sidebar_option == "OLE Tool":
+        st.subheader("OLE Tool")
+        ole_files = st.file_uploader("Upload your file here and click on 'Use OLE Tool'", accept_multiple_files=True)
+        if st.button("Use OLE Tool") and ole_files:
             analyze_ole_files(ole_files)
 
-        st.subheader("Python code analyze")
+    elif sidebar_option == "Python Code Analysis":
+        st.subheader("Python Code Analysis")
         file_to_analyze = st.file_uploader("Upload your Python file here and click on 'Analyze'", type='py')
         if st.button("Analyze") and file_to_analyze:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".py") as temp_file:
@@ -200,5 +207,5 @@ def main():
             finally:
                 os.remove(temp_file_path)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

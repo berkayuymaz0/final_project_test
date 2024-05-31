@@ -2,77 +2,121 @@
 
 This application is designed to provide various functionalities related to security testing, including PDF text extraction, OLE (Object Linking and Embedding) file analysis, and Python code analysis. It utilizes several libraries and tools to achieve these functionalities.
 
+## Overview
+
+The PDF Question Answering and Analysis Tool is a versatile application designed to assist users in extracting text from PDF files, asking questions about the content, and obtaining insightful answers. Additionally, it provides tools for analyzing Python code files and OLE files, integrating AI suggestions for improving code quality.
+
 ## Features
 
-- **PDF with AI**: Upload PDF files to extract text and perform summarization and sentiment analysis.
-- **OLE Tool**: Analyze OLE files for potential security risks.
-- **Python Code Analyzer**: Upload Python files to perform static code analysis using Bandit, pylint, and flake8.
+- **PDF Question Answering**: Upload a PDF file, extract its content, and interactively ask questions about the content. The app uses AI to provide accurate and relevant answers.
+- **OLE Tool**: Analyze OLE files and display detailed indicators and descriptions.
+- **Python Code Analysis**: Upload Python files and run multiple analysis tools (`bandit`, `pylint`, `flake8`) to get a combined report along with AI-driven improvement suggestions.
+- **Chat History**: Keep track of the questions and answers for the uploaded PDF file, with the ability to ask follow-up questions.
+- **User-Friendly Interface**: A clean and intuitive interface with a sidebar for easy navigation between different tools.
 
 ## Installation
 
-To run this application locally, follow these steps:
+### Prerequisites
 
+- Python 3.6 or higher
+- `pip` (Python package installer)
+- OpenAI API Key (sign up at [OpenAI](https://beta.openai.com/signup/) to get your API key)
 
-1. Install the required dependencies:
+### Steps
 
-```bash
-pip install -r requirements.txt
-```
+1. Clone the repository:
+    ```sh
+    git clone https://github.com/yourusername/pdf-question-answering-tool.git
+    cd pdf-question-answering-tool
+    ```
 
-2. Run the Streamlit application:
+2. Create a virtual environment:
+    ```sh
+    python -m venv venv
+    ```
 
-```bash
-streamlit run app.py
-```
+3. Activate the virtual environment:
+
+    - On Windows:
+      ```sh
+      venv\Scripts\activate
+      ```
+    - On macOS and Linux:
+      ```sh
+      source venv/bin/activate
+      ```
+
+4. Install the required packages:
+    ```sh
+    pip install -r requirements.txt
+    ```
+
+5. Create a `.env` file in the project directory and add your OpenAI API key:
+    ```env
+    OPENAI_API_KEY=your_openai_api_key
+    ```
+
+6. Run the application:
+    ```sh
+    streamlit run app.py
+    ```
 
 ## Usage
 
-After running the application, you will be prompted to authenticate with your username and password. Once authenticated, you can access the following functionalities:
+### PDF Question Answering
 
-### PDF with AI
-
-- Upload PDF files using the provided interface.
-- Click on the "Process" button to extract text, summarize content, and perform sentiment analysis.
+1. Navigate to the "PDF Question Answering" section.
+2. Upload a PDF file.
+3. Once the text extraction is complete, type your question in the input box.
+4. Click the "Ask" button to get an AI-generated answer.
+5. You can ask follow-up questions based on the chat history.
 
 ### OLE Tool
 
-- Upload OLE files using the provided interface.
-- Click on the "Use" button to analyze the files for potential security risks.
+1. Navigate to the "OLE Tool" section.
+2. Upload one or more OLE files.
+3. Click the "Use OLE Tool" button to analyze the files.
+4. Review the indicators and descriptions displayed.
 
-### Python Code Analyzer
+### Python Code Analysis
 
-- Upload Python files using the provided interface.
-- Click on the "Analyze" button to perform static code analysis using Bandit, pylint, and flake8.
+1. Navigate to the "Python Code Analysis" section.
+2. Upload a Python (.py) file.
+3. Click the "Analyze" button to run the code analysis tools.
+4. Review the combined analysis results and AI suggestions for improvements.
 
-## Authentication
+## Code Structure
 
-This application requires authentication for access. Please enter your username and password to proceed.
+- `app.py`: Main application script containing the Streamlit UI and logic.
+- `pdf_handler.py`: Module for handling PDF text extraction and embedding generation.
+- `ai_interaction.py`: Module for interacting with the OpenAI API and generating AI suggestions.
+- `analysis_tools.py`: Module for running code analysis tools and analyzing OLE files.
+- `requirements.txt`: List of required Python packages.
+- `.env`: Environment file to store the OpenAI API key.
 
 ## Dependencies
 
-- streamlit
-- dotenv
-- PyPDF2
-- langchain
-- htmlTemplates
-- subprocess
-- oletools
-- tempfile
-- HuggingFaceHub
-- matplotlib
-- streamlit_authenticator
+- `streamlit`: Framework for building web applications.
+- `PyPDF2`: Library for extracting text from PDF files.
+- `openai`: OpenAI API client.
+- `scikit-learn`: Machine learning library (used for cosine similarity).
+- `python-dotenv`: For loading environment variables from `.env` file.
+- `oletools`: Tools for analyzing OLE files.
 
-## Configuration
+## Contributing
 
-Configuration settings such as chunk size, chunk overlap, and API key are specified in the `CONFIG` dictionary within the code. Additionally, authentication settings can be configured in the `login_config/config.yaml` file.
-
-## Notes
-
-- Ensure that you have the necessary permissions and access rights to analyze sensitive files and data.
-- Use caution when analyzing potentially malicious files, and always verify the source of the files before processing.
-
-
+Contributions are welcome! Please open an issue or submit a pull request on GitHub.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Acknowledgements
+
+- OpenAI for providing the powerful language model.
+- Streamlit for the easy-to-use web application framework.
+- The maintainers of `PyPDF2`, `oletools`, and other dependencies for their valuable tools.
+
+---
+
+Feel free to customize the above README file with specific details related to your project, such as the GitHub repository URL, your username, and any additional features or instructions.

@@ -1,99 +1,30 @@
 import streamlit as st
-import PyPDF2
-import openai
 import os
+from datetime import datetime
+from pdf_handler import extract_text_from_pdf, generate_embeddings
+from ai_interaction import ask_question_to_openai, get_ai_suggestions
+from analysis_tools import analyze_ole_files, run_analysis_tool
+import tempfile
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from dotenv import load_dotenv
-from datetime import datetime
-import subprocess
-import tempfile
-import oletools.oleid
-import logging
 
-# Load environment variables from .env file
-load_dotenv()
-openai.api_key = os.getenv('OPENAI_API_KEY')
+def display_chat_history():
+    chat_history_html = ""
+    for i, chat in enumerate(st.session_state.chat_history):
+        chat_history_html += f"""
+        <div style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px;">
+            <strong>Q{i+1}:</strong> {chat['question']}<br>
+            <strong>A{i+1}:</strong> {chat['answer']}<br>
+            <small><i>{chat['timestamp']}</i></small>
+        </div>
+        """
+    st.markdown(chat_history_html, unsafe_allow_html=True)
 
-logger = logging.getLogger()
-logging.basicConfig(level=logging.ERROR)
-
-def extract_text_from_pdf(file):
-    pdf_reader = PyPDF2.PdfReader(file)
-    text = ""
-    for page_num in range(len(pdf_reader.pages)):
-        page = pdf_reader.pages[page_num]
-        text += page.extract_text()
-    return text
-
-@st.cache_data
-def generate_embeddings(text):
-    response = openai.Embedding.create(
-        model="text-embedding-ada-002",
-        input=text
-    )
-    embeddings = np.array([data['embedding'] for data in response['data']])
-    return embeddings
-
-def ask_question_to_openai(question, context):
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": f"{context}\n\nQ: {question}\nA:"}
-        ]
-    )
-    answer = response['choices'][0]['message']['content'].strip()
-    return answer
-
-def run_analysis_tool(tool_name, file_path):
-    try:
-        result = subprocess.run(
-            [tool_name, file_path] if tool_name in ['pylint', 'flake8'] else [tool_name, '-r', file_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            check=False
-        )
-        return result.stdout, result.stderr
-    except FileNotFoundError:
-        st.write(f"{tool_name.capitalize()} is not installed. Please install it using 'pip install {tool_name}'.")
-    except Exception as e:
-        logger.error(f"Error running {tool_name}: {e}")
-        st.error(f"Error running {tool_name}. Please try again.")
-    return "", ""
-
-def analyze_ole_files(files):
-    for uploaded_file in files:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as temp_file:
-            temp_file.write(uploaded_file.read())
-            temp_file_path = temp_file.name
-
-        try:
-            oid = oletools.oleid.OleID(temp_file_path)
-            indicators = oid.check()
-
-            st.write(f"Results for {uploaded_file.name}:")
-            for indicator in indicators:
-                st.write(f'Indicator id={indicator.id} name="{indicator.name}" type={indicator.type} value={repr(indicator.value)}')
-                st.write('Description:', indicator.description)
-                st.write('')
-        except Exception as e:
-            logger.error(f"Error analyzing OLE file: {e}")
-            st.error("Error analyzing OLE file. Please try again.")
-        finally:
-            os.remove(temp_file_path)
-
-def get_ai_suggestions(combined_output):
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "You are a code analysis expert."},
-            {"role": "user", "content": f"Here are the results of the code analysis:\n{combined_output}\nPlease provide suggestions for improvement."}
-        ]
-    )
-    suggestions = response['choices'][0]['message']['content'].strip()
-    return suggestions
+def get_relevant_context(chat_history, limit=1000):
+    chat_history_text = "\n".join([f"Q: {chat['question']}\nA: {chat['answer']}" for chat in chat_history])
+    if len(chat_history_text) > limit:
+        chat_history_text = chat_history_text[-limit:]
+    return chat_history_text
 
 def main():
     st.title("PDF Question Answering and Analysis Tool")
@@ -129,7 +60,9 @@ def main():
                     if question:
                         with st.spinner('Generating response...'):
                             question_embedding = generate_embeddings([question])[0]
-                            similarities = cosine_similarity([question_embedding], embeddings)[0]
+                            question_embedding = np.array(question_embedding).reshape(1, -1)
+                            embeddings_array = np.array(embeddings)
+                            similarities = cosine_similarity(question_embedding, embeddings_array)[0]
                             most_relevant_chunk = chunks[np.argmax(similarities)]
 
                             answer = ask_question_to_openai(question, most_relevant_chunk)
@@ -147,8 +80,8 @@ def main():
                 if st.button("Ask Follow-up"):
                     if follow_up_question:
                         with st.spinner('Generating response...'):
-                            chat_history_text = "\n".join([f"Q: {chat['question']}\nA: {chat['answer']}" for chat in st.session_state.chat_history])
-                            follow_up_answer = ask_question_to_openai(follow_up_question, chat_history_text)
+                            relevant_context = get_relevant_context(st.session_state.chat_history)
+                            follow_up_answer = ask_question_to_openai(follow_up_question, relevant_context)
                             st.session_state.chat_history.append({
                                 "question": follow_up_question,
                                 "answer": follow_up_answer,
@@ -157,16 +90,7 @@ def main():
 
             if st.session_state.chat_history:
                 st.write("### Chat History")
-                chat_history_html = ""
-                for i, chat in enumerate(st.session_state.chat_history):
-                    chat_history_html += f"""
-                    <div style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px;">
-                        <strong>Q{i+1}:</strong> {chat['question']}<br>
-                        <strong>A{i+1}:</strong> {chat['answer']}<br>
-                        <small><i>{chat['timestamp']}</i></small>
-                    </div>
-                    """
-                st.markdown(chat_history_html, unsafe_allow_html=True)
+                display_chat_history()
 
             if st.button("Clear Chat History"):
                 st.session_state.chat_history = []

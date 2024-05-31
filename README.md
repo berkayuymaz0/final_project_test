@@ -1,10 +1,10 @@
 # AppSec Test Application
 
-This application is designed to provide various functionalities related to security testing, including PDF text extraction, OLE (Object Linking and Embedding) file analysis, and Python code analysis. It utilizes several libraries and tools to achieve these functionalities.
 
 ## Overview
 
-The PDF Question Answering and Analysis Tool is a versatile application designed to assist users in extracting text from PDF files, asking questions about the content, and obtaining insightful answers. Additionally, it provides tools for analyzing Python code files and OLE files, integrating AI suggestions for improving code quality.
+This application is designed to provide various functionalities related to security testing, including PDF text extraction, OLE (Object Linking and Embedding) file analysis, and Python code analysis. It utilizes several libraries and tools to achieve these functionalities.
+
 
 ## Features
 
@@ -118,5 +118,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - The maintainers of `PyPDF2`, `oletools`, and other dependencies for their valuable tools.
 
 ---
-
-Feel free to customize the above README file with specific details related to your project, such as the GitHub repository URL, your username, and any additional features or instructions.

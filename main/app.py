@@ -69,6 +69,7 @@ def display_dashboard(analysis_results):
 
 def main():
     st.title("Professional Security Analysis Tool")
+    st.title("Professional Security Analysis Tool")
 
     sidebar_option = st.sidebar.selectbox(
         "Choose a section",
@@ -158,11 +159,17 @@ def main():
                 mypy_output, mypy_error = check_mypy(temp_file_path)
                 black_output, black_error = check_black(temp_file_path)
                 safety_output, safety_error = check_safety()
+                mypy_output, mypy_error = check_mypy(temp_file_path)
+                black_output, black_error = check_black(temp_file_path)
+                safety_output, safety_error = check_safety()
 
                 # Combine the outputs
                 combined_output = f"Bandit Output:\n{bandit_output}\nBandit Errors:\n{bandit_error}\n\n"
                 combined_output += f"Pylint Output:\n{pylint_output}\nPylint Errors:\n{pylint_error}\n\n"
                 combined_output += f"Flake8 Output:\n{flake8_output}\nFlake8 Errors:\n{flake8_error}\n\n"
+                combined_output += f"Mypy Output:\n{mypy_output}\nMypy Errors:\n{mypy_error}\n\n"
+                combined_output += f"Black Output:\n{black_output}\nBlack Errors:\n{black_error}\n\n"
+                combined_output += f"Safety Output:\n{safety_output}\nSafety Errors:\n{safety_error}\n\n"
                 combined_output += f"Mypy Output:\n{mypy_output}\nMypy Errors:\n{mypy_error}\n\n"
                 combined_output += f"Black Output:\n{black_output}\nBlack Errors:\n{black_error}\n\n"
                 combined_output += f"Safety Output:\n{safety_output}\nSafety Errors:\n{safety_error}\n\n"

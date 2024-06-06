@@ -1,115 +1,97 @@
-# AppSec Test Application
-
+# AppSec
 
 ## Overview
 
-This application is designed to provide various functionalities related to security testing, including PDF text extraction, OLE (Object Linking and Embedding) file analysis, and Python code analysis. It utilizes several libraries and tools to achieve these functionalities.
-
+**AppSec** is a comprehensive web application security analysis tool designed to provide detailed insights into the security posture of your code and documents. This tool integrates multiple static analysis tools and AI-driven suggestions to enhance your security analysis workflow.
 
 ## Features
 
-- **PDF Question Answering**: Upload a PDF file, extract its content, and interactively ask questions about the content. The app uses AI to provide accurate and relevant answers.
-- **OLE Tool**: Analyze OLE files and display detailed indicators and descriptions.
-- **Python Code Analysis**: Upload Python files and run multiple analysis tools (`bandit`, `pylint`, `flake8`) to get a combined report along with AI-driven improvement suggestions.
-- **Chat History**: Keep track of the questions and answers for the uploaded PDF file, with the ability to ask follow-up questions.
-- **User-Friendly Interface**: A clean and intuitive interface with a sidebar for easy navigation between different tools.
+- **PDF Question Answering**: Upload PDF files and ask questions about their content. The tool uses AI to provide detailed answers.
+- **OLE Tool Analysis**: Analyze OLE files for potential security threats and vulnerabilities. Provides detailed insights and AI-driven suggestions.
+- **Python Code Analysis**: Upload Python files to be analyzed by multiple static analysis tools. The tool provides detailed results, summarized insights, and AI-driven suggestions.
+- **Security Scans**: Run various security scans on your project to identify vulnerabilities.
+- **Dashboard**: Visualize key metrics and trends from your security analyses.
+- **Settings**: Configure analysis tool thresholds and other settings.
 
 ## Installation
 
-### Prerequisites
-
-- Python 3.6 or higher
-- `pip` (Python package installer)
-- OpenAI API Key (sign up at [OpenAI](https://beta.openai.com/signup/) to get your API key)
-
-### Steps
-
-
-1. Create a virtual environment:
+1. **Clone the repository**:
     ```sh
-    python -m venv venv
+    git clone https://github.com/berkayuymaz0/final_project_test
+    cd AppSec
     ```
 
-2. Activate the virtual environment:
+2. **Set up a virtual environment**:
+    ```sh
+    python -m venv venv
+    source venv/bin/activate   # On Windows, use `venv\Scripts\activate`
+    ```
 
-    - On Windows:
-      ```sh
-      venv\Scripts\activate
-      ```
-    - On macOS and Linux:
-      ```sh
-      source venv/bin/activate
-      ```
-
-3. Install the required packages:
+3. **Install the required packages**:
     ```sh
     pip install -r requirements.txt
     ```
 
-4. Create a `.env` file in the project directory and add your OpenAI API key:
+4. **Set up environment variables**:
+    - Create a `.env` file in the root directory of the project.
+    - Add your OpenAI API key in the `.env` file:
     ```env
     OPENAI_API_KEY=your_openai_api_key
     ```
 
-5. Run the application:
+## Usage
+
+1. **Run the Streamlit app**:
     ```sh
     streamlit run app.py
     ```
 
-## Usage
+2. **Navigate through the application**:
+    - **PDF Question Answering**: Upload a PDF and interact with the AI to get answers about the content.
+    - **OLE Tool**: Upload OLE files and get detailed analysis and AI suggestions.
+    - **Python Code Analysis**: Upload Python files to be analyzed by multiple tools, view detailed results, and get AI suggestions.
+    - **Security Scans**: Run additional security scans on your project.
+    - **Dashboard**: Visualize the results of your analyses.
+    - **Settings**: Configure tool thresholds and settings.
+
+## Components
 
 ### PDF Question Answering
 
-1. Navigate to the "PDF Question Answering" section.
-2. Upload a PDF file.
-3. Once the text extraction is complete, type your question in the input box.
-4. Click the "Ask" button to get an AI-generated answer.
-5. You can ask follow-up questions based on the chat history.
+- **Upload a PDF**: Optionally upload a PDF file.
+- **Ask Questions**: Interact with the AI by asking questions about the uploaded PDF.
+- **Chat History**: View and download the chat history.
 
-### OLE Tool
+### OLE Tool Analysis
 
-1. Navigate to the "OLE Tool" section.
-2. Upload one or more OLE files.
-3. Click the "Use OLE Tool" button to analyze the files.
-4. Review the indicators and descriptions displayed.
+- **Upload OLE Files**: Upload OLE files for analysis.
+- **Detailed Analysis**: View detailed results of the analysis, categorized by severity.
+- **AI Suggestions**: Get AI-driven suggestions based on the analysis results.
+- **Previous Analyses**: Load and view results of previous analyses.
 
 ### Python Code Analysis
 
-1. Navigate to the "Python Code Analysis" section.
-2. Upload a Python (.py) file.
-3. Click the "Analyze" button to run the code analysis tools.
-4. Review the combined analysis results and AI suggestions for improvements.
+- **Upload Python Files**: Upload Python files for comprehensive analysis.
+- **Multiple Tools**: Analyze using Bandit, Pylint, Flake8, Mypy, Black, and Safety.
+- **Detailed Results**: View detailed results from each tool.
+- **AI Suggestions**: Get AI-driven suggestions based on the analysis results.
+- **Previous Analyses**: Load and view results of previous analyses.
 
-## Code Structure
+### Security Scans
 
-- `app.py`: Main application script containing the Streamlit UI and logic.
-- `pdf_handler.py`: Module for handling PDF text extraction and embedding generation.
-- `ai_interaction.py`: Module for interacting with the OpenAI API and generating AI suggestions.
-- `analysis_tools.py`: Module for running code analysis tools and analyzing OLE files.
-- `requirements.txt`: List of required Python packages.
-- `.env`: Environment file to store the OpenAI API key.
+- **Run Security Scans**: Run additional security scans on your project to identify vulnerabilities.
 
-## Dependencies
+### Dashboard
 
-- `streamlit`: Framework for building web applications.
-- `PyPDF2`: Library for extracting text from PDF files.
-- `openai`: OpenAI API client.
-- `scikit-learn`: Machine learning library (used for cosine similarity).
-- `python-dotenv`: For loading environment variables from `.env` file.
-- `oletools`: Tools for analyzing OLE files.
+- **Visualize Metrics**: View key metrics and trends from your analyses.
+- **Summary Statistics**: Get summarized insights from your analyses.
 
-## Contributing
+### Settings
 
-Contributions are welcome! Please open an issue or submit a pull request on GitHub.
+- **Configure Tools**: Set thresholds and configure settings for analysis tools.
+
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
-## Acknowledgements
-
-- OpenAI for providing the powerful language model.
-- Streamlit for the easy-to-use web application framework.
-- The maintainers of `PyPDF2`, `oletools`, and other dependencies for their valuable tools.
-
----

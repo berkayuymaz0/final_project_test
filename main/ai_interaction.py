@@ -15,7 +15,7 @@ openai.api_key = api_key
 def ask_question_to_openai(question, context):
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4o",
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": f"{context}\n\nQ: {question}\nA:"}
@@ -29,7 +29,7 @@ def ask_question_to_openai(question, context):
 def get_ai_suggestions(combined_output):
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4o",
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a code analysis expert."},
                 {"role": "user", "content": f"Here are the results of the code analysis:\n{combined_output}\nPlease provide suggestions for improvement."}

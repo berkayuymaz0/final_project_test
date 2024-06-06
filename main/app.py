@@ -24,10 +24,8 @@ def display_chat_history():
         """
     st.markdown(chat_history_html, unsafe_allow_html=True)
 
-def get_relevant_context(chat_history, limit=1000):
-    chat_history_text = "\n".join([f"Q: {chat['question']}\nA: {chat['answer']}"] for chat in chat_history)
-    if len(chat_history_text) > limit:
-        chat_history_text = chat_history_text[-limit:]
+def get_relevant_context(chat_history):
+    chat_history_text = "\n".join(f"Q: {chat['question']}\nA: {chat['answer']}" for chat in chat_history)
     return chat_history_text
 
 def display_dashboard(analysis_results):

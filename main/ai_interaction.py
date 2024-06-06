@@ -19,7 +19,7 @@ def ask_question_to_openai(question, context):
 
 def get_ai_suggestions(combined_output):
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": "You are a code analysis expert."},
             {"role": "user", "content": f"Here are the results of the code analysis:\n{combined_output}\nPlease provide suggestions for improvement."}

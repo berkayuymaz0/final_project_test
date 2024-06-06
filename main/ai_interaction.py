@@ -15,7 +15,7 @@ openai.api_key = api_key
 def ask_question_to_openai(question, context):
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": f"{context}\n\nQ: {question}\nA:"}
@@ -26,13 +26,17 @@ def ask_question_to_openai(question, context):
     except openai.error.OpenAIError as e:
         return f"An error occurred while communicating with the OpenAI API: {e}"
 
-def get_ai_suggestions(combined_output):
+def get_ai_suggestions(combined_output, context="code analysis"):
     try:
+        prompt_context = {
+            "code analysis": "You are a code analysis expert.",
+            "oletools": "You are an expert in analyzing OLE files and security threats."
+        }
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4",
             messages=[
-                {"role": "system", "content": "You are a code analysis expert."},
-                {"role": "user", "content": f"Here are the results of the code analysis:\n{combined_output}\nPlease provide suggestions for improvement."}
+                {"role": "system", "content": prompt_context.get(context, "You are a helpful assistant.")},
+                {"role": "user", "content": f"Here are the results of the analysis:\n{combined_output}\nPlease provide suggestions for improvement."}
             ]
         )
         suggestions = response['choices'][0]['message']['content'].strip()

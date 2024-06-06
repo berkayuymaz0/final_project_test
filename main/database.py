@@ -15,6 +15,13 @@ def create_table():
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS context (
+            id INTEGER PRIMARY KEY,
+            context TEXT NOT NULL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     conn.commit()
     conn.close()
 
@@ -40,5 +47,28 @@ def load_analysis_by_id(analysis_id):
     row = cursor.fetchone()
     conn.close()
     return row[0] if row else None
+
+def save_context(context):
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM context")
+    cursor.execute("INSERT INTO context (context) VALUES (?)", (context,))
+    conn.commit()
+    conn.close()
+
+def load_context():
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT context FROM context ORDER BY timestamp DESC LIMIT 1")
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else ""
+
+def clear_context():
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM context")
+    conn.commit()
+    conn.close()
 
 create_table()

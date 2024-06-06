@@ -20,65 +20,48 @@ def get_relevant_context(chat_history):
     chat_history_text = "\n".join(f"Q: {chat['question']}\nA: {chat['answer']}" for chat in chat_history)
     return chat_history_text
 
-def display_analysis_results(file_results, details):
-    st.markdown("### File Analysis")
-    st.text(file_results)
+def display_analysis_results(combined_output, details):
+    st.markdown("### Combined Analysis Results")
+    st.markdown(combined_output, unsafe_allow_html=True)
 
-    st.markdown("### Detailed Indicators")
-    for detail in details:
-        with st.expander(f"Indicator: {detail['name']} (Severity: {detail['severity'].capitalize()})"):
-            st.write(f"**ID:** {detail['id']}")
-            st.write(f"**Type:** {detail['type']}")
-            st.write(f"**Value:** {detail['value']}")
-            st.write(f"**Description:** {detail['description']}")
-            st.write(f"**AI Insights:** {detail['ai_insights']}")
+    st.markdown("### Detailed Results by Tool")
+    for tool, result in details[0].items():
+        with st.expander(f"Tool: {tool}"):
+            st.markdown(f"```\n{result}\n```")
 
 def generate_summary_statistics(detailed_results):
     summary_data = []
     for file_details in detailed_results:
-        for detail in file_details:
+        for tool, result in file_details.items():
             summary_data.append({
-                "Name": str(detail['name']),
-                "Type": str(detail['type']),
-                "Value": str(detail['value'])
+                "Tool": tool,
+                "Result": result
             })
     df = pd.DataFrame(summary_data)
-    summary_stats = df.groupby(['Type', 'Name']).size().reset_index(name='Count')
+    summary_stats = df.groupby(['Tool']).size().reset_index(name='Count')
     return summary_stats
 
 def plot_indicator_distribution(detailed_results):
     summary_data = []
     for file_details in detailed_results:
-        for detail in file_details:
+        for tool, result in file_details.items():
             summary_data.append({
-                "Name": str(detail['name']),
-                "Type": str(detail['type']),
-                "Value": str(detail['value'])
+                "Tool": tool,
+                "Result": result
             })
     df = pd.DataFrame(summary_data)
     
-    # Plot distribution of indicator types
-    type_counts = df['Type'].value_counts()
-    st.write("### Indicator Type Distribution")
-    st.bar_chart(type_counts)
-    
-    # Plot distribution of indicator names
-    name_counts = df['Name'].value_counts()
-    st.write("### Indicator Name Distribution")
-    st.bar_chart(name_counts)
+    # Plot distribution of tool usage
+    tool_counts = df['Tool'].value_counts()
+    st.write("### Tool Usage Distribution")
+    st.bar_chart(tool_counts)
 
 def export_analysis_results(detailed_results, format="txt"):
     if format == "txt":
         output = io.StringIO()
         for file_details in detailed_results:
-            for detail in file_details:
-                output.write(f"ID: {detail['id']}\n")
-                output.write(f"Name: {detail['name']}\n")
-                output.write(f"Type: {detail['type']}\n")
-                output.write(f"Value: {detail['value']}\n")
-                output.write(f"Description: {detail['description']}\n")
-                output.write(f"Severity: {detail['severity']}\n")
-                output.write(f"AI Insights: {detail['ai_insights']}\n\n")
+            for tool, result in file_details.items():
+                output.write(f"Tool: {tool}\nResult:\n{result}\n\n")
         return output.getvalue()
 
     return ""

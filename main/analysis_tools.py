@@ -1,9 +1,6 @@
-import streamlit as st
 import subprocess
-import tempfile
-import os
-import oletools.oleid
 import logging
+import streamlit as st
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.ERROR)
@@ -24,27 +21,6 @@ def run_analysis_tool(tool_name, file_path):
         logger.error(f"Error running {tool_name}: {e}")
         st.error(f"Error running {tool_name}. Please try again.")
     return "", ""
-
-def analyze_ole_files(files):
-    for uploaded_file in files:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as temp_file:
-            temp_file.write(uploaded_file.read())
-            temp_file_path = temp_file.name
-
-        try:
-            oid = oletools.oleid.OleID(temp_file_path)
-            indicators = oid.check()
-
-            st.write(f"Results for {uploaded_file.name}:")
-            for indicator in indicators:
-                st.write(f'Indicator id={indicator.id} name="{indicator.name}" type={indicator.type} value={repr(indicator.value)}')
-                st.write('Description:', indicator.description)
-                st.write('')
-        except Exception as e:
-            logger.error(f"Error analyzing OLE file: {e}")
-            st.error("Error analyzing OLE file. Please try again.")
-        finally:
-            os.remove(temp_file_path)
 
 def check_safety():
     try:
@@ -96,4 +72,3 @@ def check_black(file_path):
         logger.error(f"Error running black: {e}")
         st.error("Error running black. Please try again.")
     return "", ""
-

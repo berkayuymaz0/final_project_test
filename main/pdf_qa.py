@@ -4,10 +4,9 @@ from datetime import datetime
 from pdf_handler import extract_text_from_pdf, generate_embeddings
 from ai_interaction import ask_question_to_openai, cached_ask_question_to_openai
 from utils import display_chat_history, get_relevant_context
-from database import load_analyses, save_context, load_context, clear_context
+from database_ole import load_analyses, save_context, load_context, clear_context
 
 def get_combined_context():
-    # Load previous analyses from the database
     analyses = load_analyses()
     combined_context = ""
     if analyses:

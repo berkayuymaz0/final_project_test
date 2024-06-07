@@ -5,7 +5,7 @@ import oletools.oleid
 import logging
 from ai_interaction import get_ai_suggestions
 from utils import display_analysis_results, generate_summary_statistics, plot_indicator_distribution, export_analysis_results
-from database import save_analysis, load_analyses, load_analysis_by_id
+from database_ole import save_analysis, load_analyses, load_analysis_by_id
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.ERROR)

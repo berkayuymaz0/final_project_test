@@ -5,7 +5,7 @@ import logging
 from analysis_tools import run_analysis_tool, check_mypy, check_black, check_safety
 from ai_interaction import get_ai_suggestions
 from utils import display_analysis_results, generate_summary_statistics, plot_indicator_distribution
-from database import save_analysis, load_analyses, load_analysis_by_id
+from database_code import save_analysis, load_analyses, load_analysis_by_id
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.ERROR)
@@ -91,7 +91,7 @@ def display_python_code_analysis():
     if analyses:
         for analysis_id, filename, result, timestamp in analyses:
             with st.expander(f"Analysis for {filename} (Uploaded on {timestamp})"):
-                st.write(result)
+                st.markdown(result, unsafe_allow_html=True)
                 if st.button(f"Load Analysis {analysis_id}", key=f"load_{analysis_id}"):
                     loaded_result = load_analysis_by_id(analysis_id)
                     if loaded_result:

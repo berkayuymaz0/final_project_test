@@ -1,7 +1,7 @@
 import sqlite3
 
 def create_connection():
-    conn = sqlite3.connect("analysis_results.db")
+    conn = sqlite3.connect("code_analysis_results.db")
     return conn
 
 def create_table():
@@ -9,7 +9,7 @@ def create_table():
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS analyses (
-            id INTEGER PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             filename TEXT NOT NULL,
             result TEXT NOT NULL,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -17,7 +17,7 @@ def create_table():
     """)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS context (
-            id INTEGER PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             context TEXT NOT NULL,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )

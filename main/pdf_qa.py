@@ -5,7 +5,7 @@ from pdf_handler import extract_text_from_pdf, generate_embeddings
 from ai_interaction import ask_question_to_openai, get_ai_suggestions
 from utils import display_chat_history, get_relevant_context
 from database_ole import load_analyses, save_context, load_context, clear_context
-from sentence_transformers import util  # Ensure this import is present
+from sentence_transformers import util
 
 def get_combined_context():
     analyses = load_analyses()
@@ -37,17 +37,17 @@ def display_pdf_question_answering():
             }
             .bot-message {
                 background-color: #f8d7da;
-                text-align: left;
+                text-align: left.
             }
             .chat-history {
                 max-height: 400px;
-                overflow-y: auto;
-                margin-bottom: 20px;
+                overflow-y: auto.
+                margin-bottom: 20px.
             }
             .timestamp {
-                font-size: 0.8em;
-                color: #888;
-                text-align: right;
+                font-size: 0.8em.
+                color: #888.
+                text-align: right.
             }
         </style>
     """, unsafe_allow_html=True)
@@ -80,7 +80,7 @@ def display_pdf_question_answering():
                 chunks = pdf_text.split("\n\n")
                 embeddings = generate_embeddings(chunks)
                 question_embedding = generate_embeddings([user_input])[0]
-                similarities = util.cos_sim(question_embedding, embeddings)[0]  # Updated to util.cos_sim
+                similarities = util.cos_sim(question_embedding, embeddings)[0]
                 most_relevant_chunk = chunks[similarities.argmax()]
                 context += f"\nContext from PDF: {most_relevant_chunk}"
 
@@ -98,22 +98,7 @@ def display_pdf_question_answering():
             save_context(st.session_state.context_memory)
 
     # Display the chat history
-    st.markdown('<div class="chat-box">', unsafe_allow_html=True)
-    st.markdown('<div class="chat-history">', unsafe_allow_html=True)
-    if st.session_state.chat_history:
-        for chat in st.session_state.chat_history:
-            st.markdown(f"""
-            <div class="user-message">
-                <strong>You:</strong> {chat['question']}
-                <div class="timestamp">{chat['timestamp']}</div>
-            </div>
-            <div class="bot-message">
-                <strong>Bot:</strong> {chat['answer']}
-                <div class="timestamp">{chat['timestamp']}</div>
-            </div>
-            """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    display_chat_history()
 
     if st.button("Clear Chat History"):
         st.session_state.chat_history = []

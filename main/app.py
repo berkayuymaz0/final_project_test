@@ -7,7 +7,7 @@ from dashboard import display_dashboard
 from settings import display_settings
 
 def main():
-    st.title("Professional Security Analysis Tool")
+    st.set_page_config(page_title="AppSec", layout="wide")
 
     sidebar_option = st.sidebar.selectbox(
         "Choose a section",

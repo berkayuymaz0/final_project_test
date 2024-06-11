@@ -1,11 +1,10 @@
-import streamlit as st
 import subprocess
-import tempfile
-import os
 import logging
+import streamlit as st
 
-logger = logging.getLogger()
-logging.basicConfig(level=logging.ERROR)
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def run_analysis_tool(tool_name, file_path):
     try:

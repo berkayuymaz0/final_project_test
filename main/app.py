@@ -7,6 +7,7 @@ from dashboard import display_dashboard
 from settings import display_settings
 
 def main():
+    st.set_page_config(page_title="Professional Security Analysis Tool", layout="wide")
     st.title("Professional Security Analysis Tool")
 
     sidebar_option = st.sidebar.selectbox(

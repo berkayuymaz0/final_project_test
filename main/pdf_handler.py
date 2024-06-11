@@ -1,17 +1,23 @@
 import PyPDF2
-import openai
 import numpy as np
+from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 import os
+import logging
+import warnings
 
+# Load environment variables from .env file
 load_dotenv()
 
-# Set OpenAI API key
-api_key = os.getenv('OPENAI_API_KEY')
-if api_key is None:
-    raise ValueError("OpenAI API key not found. Please set the 'OPENAI_API_KEY' environment variable.")
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-openai.api_key = api_key
+# Suppress specific FutureWarnings
+warnings.filterwarnings("ignore", category=FutureWarning, module="huggingface_hub.file_download")
+
+# Load the Sentence Transformer model
+model = SentenceTransformer('all-MiniLM-L6-v2')
 
 def extract_text_from_pdf(file):
     try:
@@ -23,15 +29,13 @@ def extract_text_from_pdf(file):
             text += page.extract_text()
         return text
     except Exception as e:
+        logger.error(f"Error extracting text from PDF: {e}")
         raise RuntimeError(f"Error extracting text from PDF: {e}")
 
-def generate_embeddings(text):
+def generate_embeddings(texts):
     try:
-        response = openai.Embedding.create(
-            model="text-embedding-ada-002",
-            input=text
-        )
-        embeddings = np.array([data['embedding'] for data in response['data']])
+        embeddings = model.encode(texts, convert_to_tensor=True)
         return embeddings
-    except openai.error.OpenAIError as e:
+    except Exception as e:
+        logger.error(f"Error generating embeddings: {e}")
         raise RuntimeError(f"Error generating embeddings: {e}")

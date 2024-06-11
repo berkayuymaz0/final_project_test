@@ -4,11 +4,12 @@ import os
 import oletools.oleid
 import logging
 from ai_interaction import get_ai_suggestions
-from utils import display_analysis_results, generate_summary_statistics, plot_indicator_distribution, export_analysis_results
-from database import save_analysis, load_analyses, load_analysis_by_id
+from utils import display_analysis_results, generate_summary_statistics, plot_indicator_distribution
+from database_ole import save_analysis, load_analyses, load_analysis_by_id
 
-logger = logging.getLogger()
-logging.basicConfig(level=logging.ERROR)
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 SEVERITY_LEVELS = {
     "high": ["OleObject", "Macros"],
@@ -111,17 +112,3 @@ def display_ole_tool():
                         st.text(loaded_result)
     else:
         st.write("No previous analyses found.")
-
-def display_analysis_results(file_results, details):
-    st.markdown("### File Analysis")
-    st.text(file_results)
-
-    st.markdown("### Detailed Indicators")
-    for detail in details:
-        with st.expander(f"Indicator: {detail['name']} (Severity: {detail['severity'].capitalize()})"):
-            st.write(f"**ID:** {detail['id']}")
-            st.write(f"**Type:** {detail['type']}")
-            st.write(f"**Value:** {detail['value']}")
-            st.write(f"**Description:** {detail['description']}")
-            st.write(f"**AI Insights:** {detail['ai_insights']}")
-

@@ -2,9 +2,10 @@ import streamlit as st
 import numpy as np
 from datetime import datetime
 from pdf_handler import extract_text_from_pdf, generate_embeddings
-from ai_interaction import ask_question_to_openai, cached_ask_question_to_openai
+from ai_interaction import ask_question_to_openai, get_ai_suggestions
 from utils import display_chat_history, get_relevant_context
 from database_ole import load_analyses, save_context, load_context, clear_context
+from sentence_transformers import util  # Ensure this import is present
 
 def get_combined_context():
     analyses = load_analyses()
@@ -79,14 +80,12 @@ def display_pdf_question_answering():
                 chunks = pdf_text.split("\n\n")
                 embeddings = generate_embeddings(chunks)
                 question_embedding = generate_embeddings([user_input])[0]
-                question_embedding = np.array(question_embedding).reshape(1, -1)
-                embeddings_array = np.array(embeddings)
-                similarities = np.matmul(question_embedding, embeddings_array.T).flatten()
-                most_relevant_chunk = chunks[np.argmax(similarities)]
+                similarities = util.cos_sim(question_embedding, embeddings)[0]  # Updated to util.cos_sim
+                most_relevant_chunk = chunks[similarities.argmax()]
                 context += f"\nContext from PDF: {most_relevant_chunk}"
 
             with st.spinner('Generating response...'):
-                answer = cached_ask_question_to_openai(user_input, context, model)
+                answer = ask_question_to_openai(user_input, context, model)
 
             st.session_state.chat_history.append({
                 "question": user_input,

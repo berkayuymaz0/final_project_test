@@ -1,17 +1,13 @@
 import PyPDF2
-import openai
 import numpy as np
+from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-# Set OpenAI API key
-api_key = os.getenv('OPENAI_API_KEY')
-if api_key is None:
-    raise ValueError("OpenAI API key not found. Please set the 'OPENAI_API_KEY' environment variable.")
-
-openai.api_key = api_key
+# Load the Sentence Transformer model
+model = SentenceTransformer('all-MiniLM-L6-v2')
 
 def extract_text_from_pdf(file):
     try:
@@ -25,13 +21,9 @@ def extract_text_from_pdf(file):
     except Exception as e:
         raise RuntimeError(f"Error extracting text from PDF: {e}")
 
-def generate_embeddings(text):
+def generate_embeddings(texts):
     try:
-        response = openai.Embedding.create(
-            model="text-embedding-ada-002",
-            input=text
-        )
-        embeddings = np.array([data['embedding'] for data in response['data']])
+        embeddings = model.encode(texts, convert_to_tensor=True)
         return embeddings
-    except openai.error.OpenAIError as e:
+    except Exception as e:
         raise RuntimeError(f"Error generating embeddings: {e}")

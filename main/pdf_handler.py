@@ -3,8 +3,14 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 import os
+import logging
 
+# Load environment variables from .env file
 load_dotenv()
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load the Sentence Transformer model
 model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -19,6 +25,7 @@ def extract_text_from_pdf(file):
             text += page.extract_text()
         return text
     except Exception as e:
+        logger.error(f"Error extracting text from PDF: {e}")
         raise RuntimeError(f"Error extracting text from PDF: {e}")
 
 def generate_embeddings(texts):
@@ -26,4 +33,5 @@ def generate_embeddings(texts):
         embeddings = model.encode(texts, convert_to_tensor=True)
         return embeddings
     except Exception as e:
+        logger.error(f"Error generating embeddings: {e}")
         raise RuntimeError(f"Error generating embeddings: {e}")

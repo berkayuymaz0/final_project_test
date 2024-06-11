@@ -2,6 +2,11 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import os
 from datetime import datetime
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def generate_report(analysis_results, ai_suggestions, report_title="Security Analysis Report", output_dir="."):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -46,8 +51,10 @@ def generate_report(analysis_results, ai_suggestions, report_title="Security Ana
                 y = height - 50
 
         c.save()
+        logger.info(f"Report generated: {report_path}")
         return report_path
     except Exception as e:
+        logger.error(f"Error generating report: {e}")
         raise RuntimeError(f"Error generating report: {e}")
 
 # Example usage:

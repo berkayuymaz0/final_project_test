@@ -1,7 +1,11 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 import io
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def display_chat_history():
     chat_history_html = ""

@@ -7,8 +7,9 @@ from ai_interaction import get_ai_suggestions
 from utils import display_analysis_results, generate_summary_statistics, plot_indicator_distribution
 from database_ole import save_analysis, load_analyses, load_analysis_by_id
 
-logger = logging.getLogger()
-logging.basicConfig(level=logging.ERROR)
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 SEVERITY_LEVELS = {
     "high": ["OleObject", "Macros"],

@@ -7,8 +7,9 @@ from ai_interaction import get_ai_suggestions
 from utils import display_analysis_results, generate_summary_statistics, plot_indicator_distribution
 from database_code import save_analysis, load_analyses, load_analysis_by_id
 
-logger = logging.getLogger()
-logging.basicConfig(level=logging.ERROR)
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def analyze_python_code(file):
     results = []
@@ -60,31 +61,35 @@ def display_python_code_analysis():
     file_to_analyze = st.file_uploader("Upload your Python file here and click on 'Analyze'", type='py')
     if st.button("Analyze") and file_to_analyze:
         with st.spinner('Analyzing the Python file...'):
-            combined_output, detailed_results = analyze_python_code(file_to_analyze)
-            st.success("Analysis completed!")
+            try:
+                combined_output, detailed_results = analyze_python_code(file_to_analyze)
+                st.success("Analysis completed!")
 
-            st.write("### Analysis Results")
-            display_analysis_results(combined_output, detailed_results)
+                st.write("### Analysis Results")
+                display_analysis_results(combined_output, detailed_results)
 
-            st.write("### AI Suggestions")
-            ai_suggestions = get_ai_suggestions(combined_output, context="code analysis")
-            st.write(ai_suggestions)
+                st.write("### AI Suggestions")
+                ai_suggestions = get_ai_suggestions(combined_output, context="code analysis")
+                st.write(ai_suggestions)
 
-            st.download_button(
-                label="Download Analysis Results",
-                data=combined_output,
-                file_name="python_code_analysis.txt",
-                mime="text/plain"
-            )
+                st.download_button(
+                    label="Download Analysis Results",
+                    data=combined_output,
+                    file_name="python_code_analysis.txt",
+                    mime="text/plain"
+                )
 
-            summary_stats = generate_summary_statistics(detailed_results)
-            st.write("### Summary Statistics")
-            st.table(summary_stats)
+                summary_stats = generate_summary_statistics(detailed_results)
+                st.write("### Summary Statistics")
+                st.table(summary_stats)
 
-            plot_indicator_distribution(detailed_results)
+                plot_indicator_distribution(detailed_results)
 
-            # Save to database
-            save_analysis(file_to_analyze.name, combined_output)
+                # Save to database
+                save_analysis(file_to_analyze.name, combined_output)
+            except Exception as e:
+                st.error(f"Error analyzing the Python file: {e}")
+                logger.error(f"Error analyzing the Python file: {e}")
 
     st.write("## Previous Analyses")
     analyses = load_analyses()

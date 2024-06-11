@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 import logging
+import html
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -10,11 +11,18 @@ logger = logging.getLogger(__name__)
 def display_chat_history():
     chat_history_html = ""
     for i, chat in enumerate(st.session_state.chat_history):
+        user_question = html.escape(chat['question'])
+        bot_answer = html.escape(chat['answer'])
         chat_history_html += f"""
-        <div style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px;">
-            <strong>Q{i+1}:</strong> {chat['question']}<br>
-            <strong>A{i+1}:</strong> {chat['answer']}<br>
-            <small><i>{chat['timestamp']}</i></small>
+        <div class="chat-box">
+            <div class="user-message">
+                <strong>Q{i+1}:</strong> {user_question}<br>
+                <small class="timestamp"><i>{chat['timestamp']}</i></small>
+            </div>
+            <div class="bot-message">
+                <strong>A{i+1}:</strong> {bot_answer}<br>
+                <small class="timestamp"><i>{chat['timestamp']}</i></small>
+            </div>
         </div>
         """
     st.markdown(chat_history_html, unsafe_allow_html=True)

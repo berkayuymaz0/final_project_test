@@ -4,6 +4,7 @@ from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 import os
 import logging
+import warnings
 
 # Load environment variables from .env file
 load_dotenv()
@@ -11,6 +12,9 @@ load_dotenv()
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Suppress specific FutureWarnings
+warnings.filterwarnings("ignore", category=FutureWarning, module="huggingface_hub.file_download")
 
 # Load the Sentence Transformer model
 model = SentenceTransformer('all-MiniLM-L6-v2')

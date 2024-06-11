@@ -2,11 +2,12 @@ import streamlit as st
 import numpy as np
 from datetime import datetime
 from pdf_handler import extract_text_from_pdf, generate_embeddings
-from ai_interaction import ask_question_to_openai, get_ai_suggestions
-from utils import display_chat_history, get_relevant_context
+from ai_interaction import ask_question_to_openai
+from utils import display_chat_history
 from database_ole import load_analyses, save_context, load_context, clear_context
 from sentence_transformers import util
 import logging
+import html
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -25,41 +26,6 @@ def get_combined_context():
         return ""
 
 def display_pdf_question_answering():
-    st.markdown("""
-        <style>
-            .chat-box {
-                max-width: 700px;
-                margin: auto;
-                padding: 10px;
-                border-radius: 10px;
-                background-color: #f9f9f9;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            }
-            .user-message, .bot-message {
-                padding: 10px;
-                border-radius: 10px;
-                margin-bottom: 10px;
-            }
-            .user-message {
-                background-color: #d1e7dd;
-                text-align: left;
-            }
-            .bot-message {
-                background-color: #f8d7da;
-                text-align: left;
-            }
-            .chat-history {
-                max-height: 400px;
-                overflow-y: auto;
-                margin-bottom: 20px;
-            }
-            .timestamp {
-                font-size: 0.8em;
-                color: #888;
-                text-align: right;
-            }
-        </style>
-    """, unsafe_allow_html=True)
 
     st.title("PDF Question Answering Chatbot")
 
@@ -82,9 +48,9 @@ def display_pdf_question_answering():
                 logger.error(f"Error extracting text from PDF: {e}")
 
     combined_context = get_combined_context()
-    user_input = st.text_input("You: ", placeholder="Type your message here", key="user_input")
+    user_input = st.text_input("You: ", placeholder="Type your message here")
 
-    model = st.selectbox("Choose AI Model", options=["gpt-3.5-turbo", "gpt-4"], key="model_selection")
+    model = st.selectbox("Choose AI Model", options=["gpt-3.5-turbo", "gpt-4"])
 
     if st.button("Send"):
         if user_input:
@@ -111,7 +77,9 @@ def display_pdf_question_answering():
                     st.error(f"Error generating response: {e}")
                     logger.error(f"Error generating response: {e}")
 
-    display_chat_history()
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.subheader("Chat History")
+    display_chat_history(st.session_state.chat_history)
 
     if st.button("Clear Chat History"):
         st.session_state.chat_history = []
@@ -126,3 +94,13 @@ def display_pdf_question_answering():
         file_name="chat_history.txt",
         mime="text/plain"
     )
+
+def display_chat_history(chat_history):
+    for chat in chat_history:
+        st.markdown(f"""
+        <div style='border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>
+            <p><strong>You:</strong> {html.escape(chat['question'])}</p>
+            <p><strong>Bot:</strong> {html.escape(chat['answer'])}</p>
+            <p style='text-align: right; font-size: 0.8em; color: #888;'><i>{chat['timestamp']}</i></p>
+        </div>
+        """, unsafe_allow_html=True)

@@ -1,5 +1,6 @@
 import os
 import logging
+import requests
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -62,3 +63,25 @@ def get_ai_suggestions(combined_output, context="code analysis", model="gpt-3.5-
     except Exception as e:
         logger.error(f"An error occurred while communicating with the OpenAI API: {e}")
         return f"An error occurred while communicating with the OpenAI API: {e}"
+
+# VirusTotal Integration
+VIRUSTOTAL_API_KEY = os.getenv('VIRUSTOTAL_API_KEY')
+
+def scan_file_with_virustotal(file_path):
+    url = "https://www.virustotal.com/api/v3/files"
+    headers = {
+        "x-apikey": VIRUSTOTAL_API_KEY
+    }
+    files = {
+        "file": (os.path.basename(file_path), open(file_path, "rb"))
+    }
+    response = requests.post(url, headers=headers, files=files)
+    return response.json()
+
+def get_file_report(file_id):
+    url = f"https://www.virustotal.com/api/v3/files/{file_id}"
+    headers = {
+        "x-apikey": VIRUSTOTAL_API_KEY
+    }
+    response = requests.get(url, headers=headers)
+    return response.json()

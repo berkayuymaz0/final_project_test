@@ -26,7 +26,6 @@ def get_combined_context():
         return ""
 
 def display_pdf_question_answering():
-
     st.title("PDF Question Answering Chatbot")
 
     if "chat_history" not in st.session_state:

@@ -3,6 +3,8 @@ import pandas as pd
 import io
 import logging
 import html
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -67,12 +69,52 @@ def plot_indicator_distribution(detailed_results):
     st.write("### Tool Usage Distribution")
     st.bar_chart(tool_counts)
 
-def export_analysis_results(detailed_results, format="txt"):
-    if format == "txt":
-        output = io.StringIO()
-        for file_details in detailed_results:
-            for tool, result in file_details.items():
-                output.write(f"Tool: {tool}\nResult:\n{result}\n\n")
-        return output.getvalue()
+def export_analysis_results_to_csv(detailed_results, file_name="analysis_results.csv"):
+    summary_data = []
+    for file_details in detailed_results:
+        for tool, result in file_details.items():
+            summary_data.append({
+                "Tool": tool,
+                "Result": result
+            })
+    df = pd.DataFrame(summary_data)
+    csv = df.to_csv(index=False)
+    return csv
 
-    return ""
+def export_analysis_results_to_json(detailed_results, file_name="analysis_results.json"):
+    summary_data = []
+    for file_details in detailed_results:
+        for tool, result in file_details.items():
+            summary_data.append({
+                "Tool": tool,
+                "Result": result
+            })
+    df = pd.DataFrame(summary_data)
+    json_data = df.to_json(orient="records")
+    return json_data
+
+def export_analysis_results_to_pdf(detailed_results, file_name="analysis_results.pdf"):
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(width / 2.0, height - 50, "Analysis Results")
+
+    y = height - 100
+    c.setFont("Helvetica", 10)
+    for file_details in detailed_results:
+        for tool, result in file_details.items():
+            c.drawString(50, y, f"Tool: {tool}")
+            y -= 15
+            for line in result.split('\n'):
+                c.drawString(50, y, line)
+                y -= 15
+                if y < 50:
+                    c.showPage()
+                    c.setFont("Helvetica", 10)
+                    y = height - 50
+
+    c.save()
+    buffer.seek(0)
+    return buffer

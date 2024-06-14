@@ -3,8 +3,8 @@ import tempfile
 import os
 import logging
 from analysis_tools import run_analysis_tool, check_mypy, check_black, check_safety
-from ai_interaction import get_ai_suggestions
-from utils import display_analysis_results, generate_summary_statistics, plot_indicator_distribution
+from ai_interaction import get_ai_suggestions, scan_file_with_virustotal, get_file_report
+from utils import display_analysis_results, generate_summary_statistics, plot_indicator_distribution, export_analysis_results_to_csv, export_analysis_results_to_json, export_analysis_results_to_pdf
 from database_code import save_analysis, load_analyses, load_analysis_by_id
 
 # Set up logging
@@ -25,6 +25,10 @@ def analyze_python_code(file):
         mypy_output, mypy_error = check_mypy(temp_file_path)
         black_output, black_error = check_black(temp_file_path)
         safety_output, safety_error = check_safety()
+        
+        vt_scan_result = scan_file_with_virustotal(temp_file_path)
+        file_id = vt_scan_result.get('data', {}).get('id')
+        vt_report = get_file_report(file_id) if file_id else {}
 
         combined_output = (
             f"### Bandit Output:\n```\n{bandit_output}\n```\n"
@@ -39,6 +43,8 @@ def analyze_python_code(file):
             f"### Black Errors:\n```\n{black_error}\n```\n\n"
             f"### Safety Output:\n```\n{safety_output}\n```\n"
             f"### Safety Errors:\n```\n{safety_error}\n```\n\n"
+            f"### VirusTotal Scan Result:\n```\n{vt_scan_result}\n```\n"
+            f"### VirusTotal Report:\n```\n{vt_report}\n```\n\n"
         )
 
         detailed_results.append({
@@ -47,7 +53,8 @@ def analyze_python_code(file):
             "Flake8": flake8_output + flake8_error,
             "Mypy": mypy_output + mypy_error,
             "Black": black_output + black_error,
-            "Safety": safety_output + safety_error
+            "Safety": safety_output + safety_error,
+            "VirusTotal": vt_report
         })
 
         return combined_output, detailed_results
@@ -104,3 +111,31 @@ def display_python_code_analysis():
                         st.markdown(loaded_result, unsafe_allow_html=True)
     else:
         st.write("No previous analyses found.")
+    
+    st.subheader("Export Analysis Results")
+    export_format = st.selectbox("Select export format", ["CSV", "JSON", "PDF"])
+    if st.button("Export Analysis Results"):
+        if export_format == "CSV":
+            csv_data = export_analysis_results_to_csv(detailed_results)
+            st.download_button(
+                label="Download CSV",
+                data=csv_data,
+                file_name="python_code_analysis.csv",
+                mime="text/csv",
+            )
+        elif export_format == "JSON":
+            json_data = export_analysis_results_to_json(detailed_results)
+            st.download_button(
+                label="Download JSON",
+                data=json_data,
+                file_name="python_code_analysis.json",
+                mime="application/json",
+            )
+        elif export_format == "PDF":
+            pdf_data = export_analysis_results_to_pdf(detailed_results)
+            st.download_button(
+                label="Download PDF",
+                data=pdf_data,
+                file_name="python_code_analysis.pdf",
+                mime="application/pdf",
+            )

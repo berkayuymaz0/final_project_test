@@ -1,4 +1,6 @@
 import streamlit as st
+import sqlite3
+import bcrypt
 from pdf_qa import display_pdf_question_answering
 from ole_tool import display_ole_tool
 from python_code_analysis import display_python_code_analysis
@@ -6,27 +8,102 @@ from security_scans import display_security_scans
 from dashboard import display_dashboard
 from settings import display_settings
 
+def create_usertable():
+    conn = sqlite3.connect('data.db')
+    c = conn.cursor()
+    c.execute('CREATE TABLE IF NOT EXISTS userstable(username TEXT, email TEXT, password TEXT)')
+    conn.commit()
+    conn.close()
+
+def add_userdata(username, email, password):
+    conn = sqlite3.connect('data.db')
+    c = conn.cursor()
+    c.execute('INSERT INTO userstable(username, email, password) VALUES (?, ?, ?)', (username, email, password))
+    conn.commit()
+    conn.close()
+
+def get_user_by_username(username):
+    conn = sqlite3.connect('data.db')
+    c = conn.cursor()
+    c.execute('SELECT * FROM userstable WHERE username =?', (username,))
+    data = c.fetchone()
+    conn.close()
+    return data
+
+def get_user_by_email(email):
+    conn = sqlite3.connect('data.db')
+    c = conn.cursor()
+    c.execute('SELECT * FROM userstable WHERE email =?', (email,))
+    data = c.fetchone()
+    conn.close()
+    return data
+
+def hash_password(password):
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+def verify_password(password, hashed):
+    return bcrypt.checkpw(password.encode('utf-8'), hashed)
+
 def main():
     st.set_page_config(page_title="Professional Security Analysis Tool", layout="wide")
     st.title("Professional Security Analysis Tool")
 
-    sidebar_option = st.sidebar.selectbox(
-        "Choose a section",
-        ("PDF Question Answering", "OLE Tool", "Python Code Analysis", "Security Scans", "Dashboard", "Settings")
-    )
+    menu = ["Home", "Login", "SignUp"]
+    choice = st.sidebar.selectbox("Menu", menu)
 
-    if sidebar_option == "PDF Question Answering":
-        display_pdf_question_answering()
-    elif sidebar_option == "OLE Tool":
-        display_ole_tool()
-    elif sidebar_option == "Python Code Analysis":
-        display_python_code_analysis()
-    elif sidebar_option == "Security Scans":
-        display_security_scans()
-    elif sidebar_option == "Dashboard":
-        display_dashboard()
-    elif sidebar_option == "Settings":
-        display_settings()
+    if choice == "Home":
+        st.subheader("Home")
+        # Display your main content here
+    elif choice == "Login":
+        st.subheader("Login Section")
+
+        username = st.sidebar.text_input("User Name")
+        password = st.sidebar.text_input("Password", type='password')
+        if st.sidebar.button("Login"):
+            create_usertable()
+            user_data = get_user_by_username(username)
+            if user_data:
+                stored_username, stored_email, stored_password = user_data
+                if verify_password(password, stored_password):
+                    st.success(f"Logged In as {username}")
+
+                    sidebar_option = st.sidebar.selectbox(
+                        "Choose a section",
+                        ("PDF Question Answering", "OLE Tool", "Python Code Analysis", "Security Scans", "Dashboard", "Settings")
+                    )
+
+                    if sidebar_option == "PDF Question Answering":
+                        display_pdf_question_answering()
+                    elif sidebar_option == "OLE Tool":
+                        display_ole_tool()
+                    elif sidebar_option == "Python Code Analysis":
+                        display_python_code_analysis()
+                    elif sidebar_option == "Security Scans":
+                        display_security_scans()
+                    elif sidebar_option == "Dashboard":
+                        display_dashboard()
+                    elif sidebar_option == "Settings":
+                        display_settings()
+                else:
+                    st.warning("Incorrect Username/Password")
+            else:
+                st.warning("Incorrect Username/Password")
+
+    elif choice == "SignUp":
+        st.subheader("Create New Account")
+        new_user = st.text_input("Username")
+        new_email = st.text_input("Email")
+        new_password = st.text_input("Password", type='password')
+
+        if st.button("Signup"):
+            create_usertable()
+            if get_user_by_email(new_email):
+                st.warning("This email is already registered")
+            else:
+                hashed_new_password = hash_password(new_password)
+                add_userdata(new_user, new_email, hashed_new_password)
+                st.success("You have successfully created an account")
+                st.info("Go to Login Menu to login")
 
 if __name__ == "__main__":
     main()

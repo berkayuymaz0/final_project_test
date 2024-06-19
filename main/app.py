@@ -22,14 +22,6 @@ def add_userdata(username, email, password):
     conn.commit()
     conn.close()
 
-def get_user_by_username(username):
-    conn = sqlite3.connect('data.db')
-    c = conn.cursor()
-    c.execute('SELECT * FROM userstable WHERE username =?', (username,))
-    data = c.fetchone()
-    conn.close()
-    return data
-
 def get_user_by_email(email):
     conn = sqlite3.connect('data.db')
     c = conn.cursor()
@@ -57,15 +49,15 @@ def main():
     elif choice == "Login":
         st.subheader("Login Section")
 
-        username = st.sidebar.text_input("User Name")
-        password = st.sidebar.text_input("Password", type='password')
+        email = st.sidebar.text_input("Email", key="login_email")
+        password = st.sidebar.text_input("Password", type='password', key="login_password")
         if st.sidebar.button("Login"):
             create_usertable()
-            user_data = get_user_by_username(username)
+            user_data = get_user_by_email(email)
             if user_data:
                 stored_username, stored_email, stored_password = user_data
                 if verify_password(password, stored_password):
-                    st.success(f"Logged In as {username}")
+                    st.success(f"Logged In as {stored_username}")
 
                     sidebar_option = st.sidebar.selectbox(
                         "Choose a section",
@@ -85,25 +77,32 @@ def main():
                     elif sidebar_option == "Settings":
                         display_settings()
                 else:
-                    st.warning("Incorrect Username/Password")
+                    st.warning("Incorrect Email/Password")
             else:
-                st.warning("Incorrect Username/Password")
+                st.warning("Incorrect Email/Password")
 
     elif choice == "SignUp":
         st.subheader("Create New Account")
-        new_user = st.text_input("Username")
-        new_email = st.text_input("Email")
-        new_password = st.text_input("Password", type='password')
+        new_user = st.text_input("Username", key="signup_username")
+        new_email = st.text_input("Email", key="signup_email")
+        new_password = st.text_input("Password", type='password', key="signup_password")
 
         if st.button("Signup"):
             create_usertable()
-            if get_user_by_email(new_email):
+            if not new_user or not new_email or not new_password:
+                st.warning("All fields are required")
+            elif "@" not in new_email:
+                st.warning("Please enter a valid email address")
+            elif len(new_password) < 6:
+                st.warning("Password must be at least 6 characters long")
+            elif get_user_by_email(new_email):
                 st.warning("This email is already registered")
             else:
                 hashed_new_password = hash_password(new_password)
                 add_userdata(new_user, new_email, hashed_new_password)
                 st.success("You have successfully created an account")
                 st.info("Go to Login Menu to login")
+                st.experimental_rerun()
 
 if __name__ == "__main__":
     main()

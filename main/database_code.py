@@ -5,117 +5,96 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+DATABASE = "code_analysis_results.db"
+
 def create_connection():
+    """Create a database connection and return the connection object."""
     try:
-        conn = sqlite3.connect("code_analysis_results.db")
+        conn = sqlite3.connect(DATABASE)
         return conn
     except sqlite3.Error as e:
         logger.error(f"Error creating database connection: {e}")
         return None
 
-def create_table():
+def execute_query(query, params=()):
+    """Execute a given query with optional parameters."""
     conn = create_connection()
     if conn:
         try:
-            cursor = conn.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS analyses (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    filename TEXT NOT NULL,
-                    result TEXT NOT NULL,
-                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS context (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    context TEXT NOT NULL,
-                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            conn.commit()
+            with conn:
+                conn.execute(query, params)
         except sqlite3.Error as e:
-            logger.error(f"Error creating tables: {e}")
+            logger.error(f"Error executing query '{query}': {e}")
         finally:
             conn.close()
 
-def save_analysis(filename, result):
+def fetch_query(query, params=()):
+    """Fetch results from a given query with optional parameters."""
     conn = create_connection()
     if conn:
         try:
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO analyses (filename, result) VALUES (?, ?)", (filename, result))
-            conn.commit()
+            with conn:
+                cursor = conn.execute(query, params)
+                return cursor.fetchall()
         except sqlite3.Error as e:
-            logger.error(f"Error saving analysis: {e}")
-        finally:
-            conn.close()
-
-def load_analyses():
-    conn = create_connection()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            cursor.execute("SELECT id, filename, result, timestamp FROM analyses")
-            rows = cursor.fetchall()
-            return rows
-        except sqlite3.Error as e:
-            logger.error(f"Error loading analyses: {e}")
+            logger.error(f"Error fetching query '{query}': {e}")
             return []
         finally:
             conn.close()
 
+def create_table():
+    """Create necessary tables if they do not exist."""
+    create_analysis_table_query = """
+    CREATE TABLE IF NOT EXISTS analyses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        filename TEXT NOT NULL,
+        result TEXT NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    """
+    create_context_table_query = """
+    CREATE TABLE IF NOT EXISTS context (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        context TEXT NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    """
+    execute_query(create_analysis_table_query)
+    execute_query(create_context_table_query)
+
+def save_analysis(filename, result):
+    """Save an analysis result to the database."""
+    insert_query = "INSERT INTO analyses (filename, result) VALUES (?, ?)"
+    execute_query(insert_query, (filename, result))
+
+def load_analyses():
+    """Load all analyses from the database."""
+    select_query = "SELECT id, filename, result, timestamp FROM analyses"
+    return fetch_query(select_query)
+
 def load_analysis_by_id(analysis_id):
-    conn = create_connection()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            cursor.execute("SELECT result FROM analyses WHERE id = ?", (analysis_id,))
-            row = cursor.fetchone()
-            return row[0] if row else None
-        except sqlite3.Error as e:
-            logger.error(f"Error loading analysis by id: {e}")
-            return None
-        finally:
-            conn.close()
+    """Load a specific analysis by its ID."""
+    select_query = "SELECT result FROM analyses WHERE id = ?"
+    result = fetch_query(select_query, (analysis_id,))
+    return result[0][0] if result else None
 
 def save_context(context):
-    conn = create_connection()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM context")
-            cursor.execute("INSERT INTO context (context) VALUES (?)", (context,))
-            conn.commit()
-        except sqlite3.Error as e:
-            logger.error(f"Error saving context: {e}")
-        finally:
-            conn.close()
+    """Save the context to the database, clearing any existing context first."""
+    delete_query = "DELETE FROM context"
+    insert_query = "INSERT INTO context (context) VALUES (?)"
+    execute_query(delete_query)
+    execute_query(insert_query, (context,))
 
 def load_context():
-    conn = create_connection()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            cursor.execute("SELECT context FROM context ORDER BY timestamp DESC LIMIT 1")
-            row = cursor.fetchone()
-            return row[0] if row else ""
-        except sqlite3.Error as e:
-            logger.error(f"Error loading context: {e}")
-            return ""
-        finally:
-            conn.close()
+    """Load the most recent context from the database."""
+    select_query = "SELECT context FROM context ORDER BY timestamp DESC LIMIT 1"
+    result = fetch_query(select_query)
+    return result[0][0] if result else ""
 
 def clear_context():
-    conn = create_connection()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM context")
-            conn.commit()
-        except sqlite3.Error as e:
-            logger.error(f"Error clearing context: {e}")
-        finally:
-            conn.close()
+    """Clear all context entries from the database."""
+    delete_query = "DELETE FROM context"
+    execute_query(delete_query)
 
+# Initialize the database tables
 create_table()

@@ -23,59 +23,73 @@ def categorize_severity(indicator_name):
             return severity
     return "low"
 
+def analyze_file(file):
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as temp_file:
+            temp_file.write(file.read())
+            temp_file_path = temp_file.name
+
+        oid = oletools.oleid.OleID(temp_file_path)
+        indicators = oid.check()
+        return indicators, temp_file_path
+    except Exception as e:
+        logger.error(f"Error analyzing OLE file: {e}")
+        st.error("Error analyzing OLE file. Please try again.")
+        return None, None
+
+def generate_analysis_results(uploaded_file, indicators):
+    file_results = f"Results for {uploaded_file.name}:\n"
+    details = []
+
+    for indicator in indicators:
+        severity = categorize_severity(indicator.name)
+        context = f"Indicator id={indicator.id} name={indicator.name} type={indicator.type} value={repr(indicator.value)} severity={severity}\nDescription: {indicator.description}"
+        ai_insights = get_ai_suggestions(context, context="oletools")
+
+        file_results += (
+            f'Indicator id={indicator.id} name="{indicator.name}" '
+            f'type={indicator.type} value={repr(indicator.value)} severity={severity}\n'
+            f'Description: {indicator.description}\n'
+            f'AI Insights: {ai_insights}\n\n'
+        )
+
+        details.append({
+            "id": indicator.id,
+            "name": indicator.name,
+            "type": indicator.type,
+            "value": repr(indicator.value),
+            "description": indicator.description,
+            "severity": severity,
+            "ai_insights": ai_insights
+        })
+
+    return file_results, details
+
 def analyze_ole_files(files):
     results = []
     detailed_results = []
+
     for uploaded_file in files:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as temp_file:
-            temp_file.write(uploaded_file.read())
-            temp_file_path = temp_file.name
+        indicators, temp_file_path = analyze_file(uploaded_file)
+        if indicators is None:
+            continue
 
-        try:
-            oid = oletools.oleid.OleID(temp_file_path)
-            indicators = oid.check()
+        file_results, details = generate_analysis_results(uploaded_file, indicators)
+        results.append(file_results)
+        detailed_results.append(details)
 
-            file_results = f"Results for {uploaded_file.name}:\n"
-            details = []
-
-            for indicator in indicators:
-                severity = categorize_severity(indicator.name)
-                context = f"Indicator id={indicator.id} name={indicator.name} type={indicator.type} value={repr(indicator.value)} severity={severity}\nDescription: {indicator.description}"
-                ai_insights = get_ai_suggestions(context, context="oletools")
-
-                file_results += (
-                    f'Indicator id={indicator.id} name="{indicator.name}" '
-                    f'type={indicator.type} value={repr(indicator.value)} severity={severity}\n'
-                    f'Description: {indicator.description}\n'
-                    f'AI Insights: {ai_insights}\n\n'
-                )
-
-                details.append({
-                    "id": indicator.id,
-                    "name": indicator.name,
-                    "type": indicator.type,
-                    "value": repr(indicator.value),
-                    "description": indicator.description,
-                    "severity": severity,
-                    "ai_insights": ai_insights
-                })
-            results.append(file_results)
-            detailed_results.append(details)
-        except Exception as e:
-            logger.error(f"Error analyzing OLE file: {e}")
-            st.error("Error analyzing OLE file. Please try again.")
-        finally:
+        if temp_file_path:
             os.remove(temp_file_path)
-    
+
     return results, detailed_results
 
 def display_ole_tool():
     st.subheader("OLE Tool")
-    
+
     ole_files = st.file_uploader("Upload your file here and click on 'Use OLE Tool'", accept_multiple_files=True)
     if st.button("Use OLE Tool") and ole_files:
         results, detailed_results = analyze_ole_files(ole_files)
-        
+
         if results:
             combined_results = "\n".join(results)
             st.write("## Analysis Results")

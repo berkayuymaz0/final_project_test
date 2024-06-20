@@ -12,6 +12,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def analyze_python_code(file):
+    """
+    Analyze a Python file using various tools and return the combined output and detailed results.
+    
+    :param file: File-like object representing the Python file to analyze.
+    :return: Tuple of combined output string and detailed results dictionary.
+    """
     results = []
     detailed_results = []
     with tempfile.NamedTemporaryFile(delete=False, suffix=".py") as temp_file:
@@ -63,6 +69,9 @@ def analyze_python_code(file):
         os.remove(temp_file_path)
 
 def display_python_code_analysis():
+    """
+    Display the Python Code Analysis interface and handle file upload, analysis, and results display.
+    """
     st.subheader("Python Code Analysis")
 
     file_to_analyze = st.file_uploader("Upload your Python file here and click on 'Analyze'", type='py')

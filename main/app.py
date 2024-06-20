@@ -8,34 +8,37 @@ from security_scans import display_security_scans
 from dashboard import display_dashboard
 from settings import display_settings
 
+# Database management functions
 def create_usertable():
-    conn = sqlite3.connect('data.db')
-    c = conn.cursor()
-    c.execute('CREATE TABLE IF NOT EXISTS userstable(username TEXT, email TEXT, password TEXT)')
-    conn.commit()
-    conn.close()
+    execute_query('CREATE TABLE IF NOT EXISTS userstable(username TEXT, email TEXT, password TEXT)')
 
 def add_userdata(username, email, password):
-    conn = sqlite3.connect('data.db')
-    c = conn.cursor()
-    c.execute('INSERT INTO userstable(username, email, password) VALUES (?, ?, ?)', (username, email, password))
-    conn.commit()
-    conn.close()
+    execute_query('INSERT INTO userstable(username, email, password) VALUES (?, ?, ?)', (username, email, password))
 
 def get_user_by_email(email):
-    conn = sqlite3.connect('data.db')
-    c = conn.cursor()
-    c.execute('SELECT * FROM userstable WHERE email =?', (email,))
-    data = c.fetchone()
-    conn.close()
-    return data
+    query = 'SELECT * FROM userstable WHERE email =?'
+    return fetch_one(query, (email,))
 
+def execute_query(query, params=()):
+    with sqlite3.connect('data.db') as conn:
+        c = conn.cursor()
+        c.execute(query, params)
+        conn.commit()
+
+def fetch_one(query, params=()):
+    with sqlite3.connect('data.db') as conn:
+        c = conn.cursor()
+        c.execute(query, params)
+        return c.fetchone()
+
+# Password hashing and verification
 def hash_password(password):
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
 def verify_password(password, hashed):
     return bcrypt.checkpw(password.encode('utf-8'), hashed)
 
+# Main application function
 def main():
     st.set_page_config(page_title="Professional Security Analysis Tool", layout="wide")
     st.title("Professional Security Analysis Tool")
@@ -46,6 +49,7 @@ def main():
     if choice == "Home":
         st.subheader("Home")
         # Display your main content here
+
     elif choice == "Login":
         st.subheader("Login Section")
 

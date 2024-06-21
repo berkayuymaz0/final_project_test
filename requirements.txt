@@ -5,7 +5,6 @@ sentence_transformers
 oletools
 reportlab
 bcrypt
-sqlite3
 bandit
 pylint
 flake8

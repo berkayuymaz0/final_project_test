@@ -77,6 +77,7 @@ def get_ai_suggestions(combined_output, context="code analysis", model="gpt-3.5-
         logger.error(f"An error occurred while communicating with the OpenAI API via LangChain: {e}")
         return f"An error occurred while communicating with the OpenAI API: {e}"
 
+
 # VirusTotal Integration
 VIRUSTOTAL_API_KEY = os.getenv('VIRUSTOTAL_API_KEY')
 

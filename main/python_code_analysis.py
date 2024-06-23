@@ -1,150 +1,123 @@
 import streamlit as st
 import tempfile
 import os
+import pandas as pd
 import logging
 from analysis_tools import run_analysis_tool, check_mypy, check_black, check_safety
 from ai_interaction import get_ai_suggestions, scan_file_with_virustotal, get_file_report
-from utils import display_analysis_results, generate_summary_statistics, plot_indicator_distribution, export_analysis_results_to_csv, export_analysis_results_to_json, export_analysis_results_to_pdf
+from utils import generate_summary_statistics, plot_indicator_distribution
 from database_code import save_analysis, load_analyses, load_analysis_by_id
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def analyze_python_code(file):
-    """
-    Analyze a Python file using various tools and return the combined output and detailed results.
-    
-    :param file: File-like object representing the Python file to analyze.
-    :return: Tuple of combined output string and detailed results dictionary.
-    """
+def format_output(output, error):
+    """Format the output and error messages for better readability."""
+    return output.replace('\n', '<br>'), error.replace('\n', '<br>')
+
+def analyze_python_file(file_path):
+    """Analyze a single Python file and return results and detailed information."""
     results = []
-    detailed_results = []
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".py") as temp_file:
-        temp_file.write(file.read())
-        temp_file_path = temp_file.name
+    tools = ["bandit", "pylint", "flake8", "mypy", "black", "safety"]
+    
+    for tool in tools:
+        if tool == "mypy":
+            output, error = check_mypy(file_path)
+        elif tool == "black":
+            output, error = check_black(file_path)
+        elif tool == "safety":
+            output, error = check_safety()
+        else:
+            output, error = run_analysis_tool(tool, file_path)
 
-    try:
-        bandit_output, bandit_error = run_analysis_tool('bandit', temp_file_path)
-        pylint_output, pylint_error = run_analysis_tool('pylint', temp_file_path)
-        flake8_output, flake8_error = run_analysis_tool('flake8', temp_file_path)
-        mypy_output, mypy_error = check_mypy(temp_file_path)
-        black_output, black_error = check_black(temp_file_path)
-        safety_output, safety_error = check_safety()
-        
-        vt_scan_result = scan_file_with_virustotal(temp_file_path)
-        file_id = vt_scan_result.get('data', {}).get('id')
-        vt_report = get_file_report(file_id) if file_id else {}
-
-        combined_output = (
-            f"### Bandit Output:\n```\n{bandit_output}\n```\n"
-            f"### Bandit Errors:\n```\n{bandit_error}\n```\n\n"
-            f"### Pylint Output:\n```\n{pylint_output}\n```\n"
-            f"### Pylint Errors:\n```\n{pylint_error}\n```\n\n"
-            f"### Flake8 Output:\n```\n{flake8_output}\n```\n"
-            f"### Flake8 Errors:\n```\n{flake8_error}\n```\n\n"
-            f"### Mypy Output:\n```\n{mypy_output}\n```\n"
-            f"### Mypy Errors:\n```\n{mypy_error}\n```\n\n"
-            f"### Black Output:\n```\n{black_output}\n```\n"
-            f"### Black Errors:\n```\n{black_error}\n```\n\n"
-            f"### Safety Output:\n```\n{safety_output}\n```\n"
-            f"### Safety Errors:\n```\n{safety_error}\n```\n\n"
-            f"### VirusTotal Scan Result:\n```\n{vt_scan_result}\n```\n"
-            f"### VirusTotal Report:\n```\n{vt_report}\n```\n\n"
-        )
-
-        detailed_results.append({
-            "Bandit": bandit_output + bandit_error,
-            "Pylint": pylint_output + pylint_error,
-            "Flake8": flake8_output + flake8_error,
-            "Mypy": mypy_output + mypy_error,
-            "Black": black_output + black_error,
-            "Safety": safety_output + safety_error,
-            "VirusTotal": vt_report
+        formatted_output, formatted_error = format_output(output, error)
+        results.append({
+            "Tool": tool.capitalize(),
+            "Output": formatted_output,
+            "Error": formatted_error
         })
+    
+    return results
 
-        return combined_output, detailed_results
+def analyze_python_files(files):
+    """Analyze multiple Python files and return results and detailed information."""
+    all_details = []
+    for uploaded_file in files:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".py") as temp_file:
+            temp_file.write(uploaded_file.read())
+            temp_file_path = temp_file.name
 
-    finally:
-        os.remove(temp_file_path)
+        try:
+            details = analyze_python_file(temp_file_path)
+            all_details.append((uploaded_file.name, details))
+        except Exception as e:
+            logger.error(f"Error analyzing Python file: {e}")
+            st.error(f"Error analyzing {uploaded_file.name}. Please try again.")
+        finally:
+            os.remove(temp_file_path)
+
+    return all_details
 
 def display_python_code_analysis():
-    """
-    Display the Python Code Analysis interface and handle file upload, analysis, and results display.
-    """
     st.subheader("Python Code Analysis")
 
-    file_to_analyze = st.file_uploader("Upload your Python file here and click on 'Analyze'", type='py')
-    if st.button("Analyze") and file_to_analyze:
-        with st.spinner('Analyzing the Python file...'):
-            try:
-                combined_output, detailed_results = analyze_python_code(file_to_analyze)
-                st.success("Analysis completed!")
+    # File uploader for Python files
+    python_files = st.file_uploader("Upload your Python files here", accept_multiple_files=True, type=["py"])
+    if st.button("Analyze Python Files") and python_files:
+        with st.spinner('Analyzing Python files...'):
+            analysis_results = analyze_python_files(python_files)
 
-                st.write("### Analysis Results")
-                display_analysis_results(combined_output, detailed_results)
+            if analysis_results:
+                combined_results = []
+                all_ai_suggestions = []
+                for file_name, details in analysis_results:
+                    combined_context = "\n\n".join([f"{d['Tool']}: {d['Output']} {d['Error']}" for d in details])
+                    ai_suggestions = get_ai_suggestions(combined_context, context="code analysis")
 
-                st.write("### AI Suggestions")
-                ai_suggestions = get_ai_suggestions(combined_output, context="code analysis")
-                st.write(ai_suggestions)
+                    # Display results for each file
+                    st.write(f"## Analysis Results for {file_name}")
+                    df = pd.DataFrame(details)
+                    st.write(df.to_html(escape=False), unsafe_allow_html=True)
+
+                    combined_results.append(df.to_string())
+                    all_ai_suggestions.append(f"AI Suggestions for {file_name}:\n{ai_suggestions}")
 
                 st.download_button(
                     label="Download Analysis Results",
-                    data=combined_output,
-                    file_name="python_code_analysis.txt",
+                    data="\n\n".join(combined_results),
+                    file_name="python_code_analysis_results.txt",
                     mime="text/plain"
                 )
 
-                summary_stats = generate_summary_statistics(detailed_results)
-                st.write("### Summary Statistics")
+                all_details = [d for _, details in analysis_results for d in details]
+                summary_stats = generate_summary_statistics(all_details)
+                st.write("## Summary Statistics")
                 st.table(summary_stats)
 
-                plot_indicator_distribution(detailed_results)
+                plot_indicator_distribution(all_details)
 
-                # Save to database
-                save_analysis(file_to_analyze.name, combined_output)
-            except Exception as e:
-                st.error(f"Error analyzing the Python file: {e}")
-                logger.error(f"Error analyzing the Python file: {e}")
+                # Display AI suggestions
+                st.write("## AI Suggestions")
+                st.write("\n\n".join(all_ai_suggestions))
+
+                # Save results to database
+                for uploaded_file, result in zip(python_files, combined_results):
+                    save_analysis(uploaded_file.name, result)
 
     st.write("## Previous Analyses")
     analyses = load_analyses()
     if analyses:
         for analysis_id, filename, result, timestamp in analyses:
             with st.expander(f"Analysis for {filename} (Uploaded on {timestamp})"):
-                st.markdown(result, unsafe_allow_html=True)
+                st.write(result)
                 if st.button(f"Load Analysis {analysis_id}", key=f"load_{analysis_id}"):
                     loaded_result = load_analysis_by_id(analysis_id)
                     if loaded_result:
                         st.write("## Loaded Analysis Result")
-                        st.markdown(loaded_result, unsafe_allow_html=True)
+                        st.text(loaded_result)
     else:
         st.write("No previous analyses found.")
-    
-    st.subheader("Export Analysis Results")
-    export_format = st.selectbox("Select export format", ["CSV", "JSON", "PDF"])
-    if st.button("Export Analysis Results"):
-        if export_format == "CSV":
-            csv_data = export_analysis_results_to_csv(detailed_results)
-            st.download_button(
-                label="Download CSV",
-                data=csv_data,
-                file_name="python_code_analysis.csv",
-                mime="text/csv",
-            )
-        elif export_format == "JSON":
-            json_data = export_analysis_results_to_json(detailed_results)
-            st.download_button(
-                label="Download JSON",
-                data=json_data,
-                file_name="python_code_analysis.json",
-                mime="application/json",
-            )
-        elif export_format == "PDF":
-            pdf_data = export_analysis_results_to_pdf(detailed_results)
-            st.download_button(
-                label="Download PDF",
-                data=pdf_data,
-                file_name="python_code_analysis.pdf",
-                mime="application/pdf",
-            )
+
+if __name__ == "__main__":
+    display_python_code_analysis()

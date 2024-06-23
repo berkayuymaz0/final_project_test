@@ -53,7 +53,11 @@ def ask_question_to_openai(question, context, model="gpt-3.5-turbo"):
 def get_ai_suggestions(combined_output, context="code analysis", model="gpt-3.5-turbo"):
     try:
         prompt_context = {
-            "code analysis": "You are a code analysis expert.",
+            "code analysis": (
+                "You are an expert in code analysis. Based on the following analysis results from various tools "
+                "(e.g., bandit, pylint, flake8, mypy, black, safety), identify any issues, suggest appropriate fixes, "
+                "and provide a detailed explanation for each fix. Here are the analysis results:\n\n"
+            ),
             "oletools": (
                 "You are an expert in analyzing OLE files and identifying potential security threats. "
                 "Based on the following analysis results, identify any security threats, suggest appropriate mitigation strategies, "
@@ -64,7 +68,7 @@ def get_ai_suggestions(combined_output, context="code analysis", model="gpt-3.5-
         vectorstore = get_vectorstore(combined_output.split("\n\n"))
         conversation_chain = get_conversation_chain(vectorstore, temp, model)
         prompt = prompt_context.get(context, "You are a helpful assistant.")
-        response = conversation_chain({'question': f"{prompt}\nHere are the results of the analysis:\n{combined_output}\nPlease provide detailed suggestions and insights."})
+        response = conversation_chain({'question': f"{prompt}{combined_output}\nPlease provide detailed suggestions and specific fixes for the identified issues."})
         
         # Log the entire response to inspect its structure
         logger.info(f"Response from LangChain: {response}")

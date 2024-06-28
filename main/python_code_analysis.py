@@ -7,6 +7,8 @@ from analysis_tools import run_analysis_tool, check_mypy, check_black, check_saf
 from ai_interaction import get_ai_suggestions, scan_file_with_virustotal, get_file_report
 from utils import generate_summary_statistics, plot_indicator_distribution
 from database_code import save_analysis, load_analyses, load_analysis_by_id
+from radon.complexity import cc_visit
+from radon.metrics import mi_visit, mi_rank
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -36,6 +38,28 @@ def analyze_python_file(file_path):
             "Tool": tool.capitalize(),
             "Output": formatted_output,
             "Error": formatted_error
+        })
+    
+    # Add complexity analysis
+    with open(file_path, 'r') as f:
+        code = f.read()
+        complexity_analysis = cc_visit(code)
+        maintainability_index = mi_visit(code, False)  # Use False for single mode
+        
+        complexity_output = "<br>".join([str(c) for c in complexity_analysis])
+        mi_rank_value = mi_rank(maintainability_index)
+        mi_output = f"Maintainability Index: {maintainability_index} ({mi_rank_value})"
+        
+        results.append({
+            "Tool": "Complexity",
+            "Output": complexity_output,
+            "Error": ""
+        })
+        
+        results.append({
+            "Tool": "Maintainability Index",
+            "Output": mi_output,
+            "Error": ""
         })
     
     return results

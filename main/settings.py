@@ -7,19 +7,27 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def display_settings():
+    """
+    Display the settings interface to configure analysis tools.
+    """
     st.subheader("Settings")
     try:
         config = load_config()
-    
+
         st.write("Configure Analysis Tools")
         pylint_threshold = st.number_input("Pylint Threshold", value=config.get("pylint_threshold", 7.0))
         flake8_threshold = st.number_input("Flake8 Threshold", value=config.get("flake8_threshold", 7.0))
-    
+
         if st.button("Save Settings"):
             config['pylint_threshold'] = pylint_threshold
             config['flake8_threshold'] = flake8_threshold
             save_config(config)
-            st.success("Settings saved")
+            st.success("Settings saved successfully")
+            logger.info("Settings saved successfully")
     except Exception as e:
         st.error(f"Error loading settings: {e}")
-        logger.error(f"Error loading settings: {e}")
+        logger.error(f"Error loading settings: {e}", exc_info=True)
+
+# Example usage in Streamlit
+if __name__ == "__main__":
+    display_settings()

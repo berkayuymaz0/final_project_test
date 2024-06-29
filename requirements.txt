@@ -14,3 +14,9 @@ safety
 requests
 openai
 python-dotenv
+langchain
+langchain_openai
+langchain_community
+radon
+matplotlib
+faiss-cpu

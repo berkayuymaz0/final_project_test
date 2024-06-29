@@ -6,3 +6,6 @@ __pycache__/
 __pycache__/
 .venv/
 venv/
+main/code_analysis_results.db
+main/data.db
+main/ole_analysis_results.db

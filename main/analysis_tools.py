@@ -38,6 +38,27 @@ def run_analysis_tool(tool_name, file_path):
             with open('cppcheck_output.txt', 'r') as f:
                 output = f.read()
             error = result.stderr
+
+        elif tool_name == 'clang-analyzer':
+            result = subprocess.run(
+                ['clang', '--analyze', file_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False
+            )
+            output, error = result.stdout, result.stderr
+
+        elif tool_name == 'clang-format':
+            result = subprocess.run(
+                ['clang-format', '-i', file_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False
+            )
+            output, error = "File formatted successfully.", result.stderr
+
         else:
             result = subprocess.run(
                 [tool_name, file_path],
@@ -47,7 +68,9 @@ def run_analysis_tool(tool_name, file_path):
                 check=False
             )
             output, error = result.stdout, result.stderr
+
         return output, error
+
     except FileNotFoundError:
         st.write(f"{tool_name.capitalize()} is not installed. Please install it using the appropriate package manager.")
     except Exception as e:

@@ -3,7 +3,7 @@ import tempfile
 import os
 import pandas as pd
 import logging
-from analysis_tools import run_analysis_tool, check_mypy, check_black, check_safety
+from analysis_tools import run_analysis_tool
 from ai_interaction import get_ai_suggestions
 from utils import generate_summary_statistics, plot_indicator_distribution
 from database_code import save_analysis, load_analyses, load_analysis_by_id
@@ -23,7 +23,7 @@ def analyze_file(file_path, file_type):
     if file_type == "python":
         tools = ["bandit", "pylint", "flake8", "mypy", "black", "safety"]
     elif file_type == "c":
-        tools = ["cppcheck"]
+        tools = ["cppcheck", "clang-analyzer", "clang-format"]
     elif file_type == "javascript":
         tools = ["eslint"]
     else:
@@ -34,10 +34,19 @@ def analyze_file(file_path, file_type):
         output, error = run_analysis_tool(tool, file_path)
         formatted_output, formatted_error = format_output(output, error)
         results.append({
-            "Tool": tool.capitalize(),
+            "Tool": tool.replace('-', ' ').capitalize(),
             "Output": formatted_output,
             "Error": formatted_error
         })
+
+        if tool == "clang-format":
+            with open(file_path, 'r') as f:
+                formatted_content = f.read()
+            results.append({
+                "Tool": "Formatted File",
+                "Output": formatted_content.replace('\n', '<br>'),
+                "Error": ""
+            })
 
     return results
 

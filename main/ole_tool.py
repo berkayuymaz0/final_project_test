@@ -73,13 +73,14 @@ def display_ole_tool():
     st.subheader("OLE Tool")
 
     # File uploader for OLE files
-    ole_files = st.file_uploader("Upload your OLE files here", accept_multiple_files=True, type=["docx", "xls", "ppt"])
+    ole_files = st.file_uploader("Upload your OLE files here", accept_multiple_files=True, type=["doc", "xls", "ppt"])
     if st.button("Analyze OLE Files") and ole_files:
         with st.spinner('Analyzing OLE files...'):
             analysis_results = analyze_ole_files(ole_files)
 
             if analysis_results:
                 combined_results = []
+                all_ai_suggestions = []
                 for file_name, details in analysis_results:
                     combined_context = "\n\n".join([d["context"] for d in details])
                     ai_suggestions = get_ai_suggestions(combined_context, context="oletools")
@@ -87,10 +88,10 @@ def display_ole_tool():
                     # Display results for each file
                     st.write(f"## Analysis Results for {file_name}")
                     df = pd.DataFrame(details)
-                    df["AI Insights"] = ai_suggestions
-                    st.dataframe(df)
+                    st.write(df.to_html(escape=False), unsafe_allow_html=True)
 
                     combined_results.append(df.to_string())
+                    all_ai_suggestions.append(f"AI Suggestions for {file_name}:\n{ai_suggestions}")
 
                 st.download_button(
                     label="Download Analysis Results",
@@ -105,6 +106,10 @@ def display_ole_tool():
                 st.table(summary_stats)
 
                 plot_indicator_distribution(all_details)
+
+                # Display AI suggestions
+                st.write("## AI Suggestions")
+                st.write("\n\n".join(all_ai_suggestions))
 
                 # Save results to database
                 for uploaded_file, result in zip(ole_files, combined_results):

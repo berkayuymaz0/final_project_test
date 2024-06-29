@@ -1,0 +1,20 @@
+/var/folders/jx/2gnnjbzs24lb0y2c53l74sz00000gn/T/tmprq7w4e49.c:1:0: information: Include file: <stdio.h> not found. Please note: Cppcheck does not need standard library headers to get proper results. [missingIncludeSystem]
+#include <stdio.h>
+^
+/var/folders/jx/2gnnjbzs24lb0y2c53l74sz00000gn/T/tmprq7w4e49.c:2:0: information: Include file: <string.h> not found. Please note: Cppcheck does not need standard library headers to get proper results. [missingIncludeSystem]
+#include <string.h>
+^
+/var/folders/jx/2gnnjbzs24lb0y2c53l74sz00000gn/T/tmprq7w4e49.c:18:5: warning: scanf() without field width limits can crash with huge input data. [invalidscanf]
+    scanf("%s", username);
+    ^
+/var/folders/jx/2gnnjbzs24lb0y2c53l74sz00000gn/T/tmprq7w4e49.c:21:5: warning: scanf() without field width limits can crash with huge input data. [invalidscanf]
+    scanf("%s", password);
+    ^
+/var/folders/jx/2gnnjbzs24lb0y2c53l74sz00000gn/T/tmprq7w4e49.c:4:16: style: Parameter 'username' can be declared as const array [constParameter]
+int login(char username[], char password[]) {
+               ^
+/var/folders/jx/2gnnjbzs24lb0y2c53l74sz00000gn/T/tmprq7w4e49.c:4:33: style: Parameter 'password' can be declared as const array [constParameter]
+int login(char username[], char password[]) {
+                                ^
+nofile:0:0: information: Active checkers: 107/802 (use --checkers-report=<filename> to see details) [checkersReport]
+

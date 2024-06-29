@@ -3,7 +3,7 @@ import sqlite3
 import bcrypt
 from pdf_qa import display_pdf_question_answering
 from ole_tool import display_ole_tool
-from python_code_analysis import display_python_code_analysis
+from python_code_analysis import display_code_analysis
 from security_scans import display_security_scans
 from dashboard import display_dashboard
 from settings import display_settings
@@ -128,7 +128,7 @@ def main():
         elif sidebar_option == "OLE Tool":
             display_ole_tool()
         elif sidebar_option == "Python Code Analysis":
-            display_python_code_analysis()
+            display_code_analysis()
         elif sidebar_option == "Security Scans":
             display_security_scans()
         elif sidebar_option == "Dashboard":

@@ -11,12 +11,11 @@ flake8
 mypy
 black
 safety
+clang-tidy
+eslint
 requests
-openai
-python-dotenv
 langchain
 langchain_openai
 langchain_community
-radon
-matplotlib
-faiss-cpu
+python-dotenv
+pandas

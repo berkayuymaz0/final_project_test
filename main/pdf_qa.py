@@ -62,7 +62,7 @@ def display_pdf_question_answering():
 
     # Chatbot settings
     st.sidebar.header("Chat Bot Settings")
-    model = st.sidebar.selectbox('Model', options=['gpt-3.5-turbo', 'gpt-4'])
+    model = st.selectbox(label='Model', options=['gpt-3.5-turbo','llama3'])
     personality = st.sidebar.selectbox('Personality', options=['general assistant', 'academic', 'witty'])
     temperature = st.sidebar.slider("Temperature", 0.0, 1.0, 0.5)
     prompt = set_prompt(personality)

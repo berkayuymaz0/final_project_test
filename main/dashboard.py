@@ -1,65 +1,76 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px
 import logging
+from database_code import load_analyses
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def display_dashboard():
-    st.subheader("Dashboard")
-    st.write("Key Metrics and Trends")
+    st.title("Security Analysis Dashboard")
 
     try:
-        # Sample data
-        analysis_results = [
-            {'date': '2023-05-01', 'vulnerabilities': 10, 'severity': 'High', 'tool': 'Bandit'},
-            {'date': '2023-05-02', 'vulnerabilities': 8, 'severity': 'Medium', 'tool': 'Pylint'},
-            {'date': '2023-05-03', 'vulnerabilities': 6, 'severity': 'Low', 'tool': 'Flake8'},
-            {'date': '2023-05-04', 'vulnerabilities': 5, 'severity': 'High', 'tool': 'Mypy'}
-        ]
+        # Load data from the database
+        analyses = load_analyses()
+        df = pd.DataFrame(analyses, columns=["ID", "Filename", "Result", "Timestamp"])
+        df["Timestamp"] = pd.to_datetime(df["Timestamp"])
+        df['Date'] = df['Timestamp'].dt.date
 
-        df = pd.DataFrame(analysis_results)
-        df['date'] = pd.to_datetime(df['date'])
-        df.set_index('date', inplace=True)
+        # Extract severity counts (example, modify based on actual result format)
+        df['High Severity'] = df['Result'].str.count('High')
+        df['Medium Severity'] = df['Result'].str.count('Medium')
+        df['Low Severity'] = df['Result'].str.count('Low')
 
-        # Plot: Vulnerabilities over Time
-        st.write("### Vulnerabilities over Time")
-        plt.figure(figsize=(10, 5))
-        plt.plot(df.index, df['vulnerabilities'], marker='o', color='b', linestyle='-')
-        plt.xlabel('Date')
-        plt.ylabel('Number of Vulnerabilities')
-        plt.title('Vulnerabilities Over Time')
-        plt.grid(True)
-        st.pyplot(plt)
-        plt.close()
+        # Summary Metrics
+        st.markdown("### Summary Metrics")
+        total_analyses = df.shape[0]
+        total_high_severity = df['High Severity'].sum()
+        total_medium_severity = df['Medium Severity'].sum()
+        total_low_severity = df['Low Severity'].sum()
 
-        # Plot: Severity Levels
-        st.write("### Severity Levels")
-        severity_counts = df['severity'].value_counts()
-        plt.figure(figsize=(10, 5))
-        severity_counts.plot(kind='bar', color='skyblue')
-        plt.xlabel('Severity Level')
-        plt.ylabel('Count')
-        plt.title('Severity Levels of Vulnerabilities')
-        st.pyplot(plt)
-        plt.close()
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Total Analyses", total_analyses)
+        col2.metric("High Severity", total_high_severity)
+        col3.metric("Medium Severity", total_medium_severity)
+        col4.metric("Low Severity", total_low_severity)
 
-        # Plot: Tool Usage
-        st.write("### Tool Usage")
-        tool_usage = df['tool'].value_counts()
-        plt.figure(figsize=(10, 5))
-        tool_usage.plot(kind='pie', autopct='%1.1f%%', startangle=90, colors=plt.cm.Paired.colors)
-        plt.title('Tool Usage Distribution')
-        plt.axis('equal')
-        st.pyplot(plt)
-        plt.close()
+        # Analyses Over Time
+        st.markdown("### Analyses Over Time")
+        analyses_over_time = df.groupby('Date').size().reset_index(name='Counts')
+        fig_line = px.line(analyses_over_time, x='Date', y='Counts', title='Analyses Over Time', markers=True)
+        st.plotly_chart(fig_line, use_container_width=True)
+
+        # Severity Distribution
+        st.markdown("### Severity Distribution")
+        severity_counts = pd.DataFrame({
+            'Severity': ['High', 'Medium', 'Low'],
+            'Count': [total_high_severity, total_medium_severity, total_low_severity]
+        })
+        fig_pie = px.pie(severity_counts, values='Count', names='Severity', title='Severity Distribution')
+        st.plotly_chart(fig_pie, use_container_width=True)
+
+        # Vulnerabilities by File Type (example)
+        st.markdown("### Vulnerabilities by File Type")
+        df['File Type'] = df['Filename'].apply(lambda x: x.split('.')[-1])
+        file_type_vulnerabilities = df.groupby('File Type')[['High Severity', 'Medium Severity', 'Low Severity']].sum().reset_index()
+        fig_bar = px.bar(file_type_vulnerabilities, x='File Type', y=['High Severity', 'Medium Severity', 'Low Severity'], 
+                         title='Vulnerabilities by File Type', barmode='group')
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+        # Detailed Analysis Table
+        st.markdown("### Detailed Analyses")
+        st.dataframe(df[['Filename', 'High Severity', 'Medium Severity', 'Low Severity', 'Timestamp']].sort_values(by="Timestamp", ascending=False))
+
+        # Downloadable CSV
+        st.markdown("### Download Data")
+        csv_data = df.to_csv(index=False)
+        st.download_button(label="Download CSV", data=csv_data, file_name='analysis_data.csv', mime='text/csv')
 
     except Exception as e:
         st.error(f"Error displaying dashboard: {e}")
         logger.error("Error displaying dashboard", exc_info=True)
 
-# Example usage
 if __name__ == "__main__":
     display_dashboard()

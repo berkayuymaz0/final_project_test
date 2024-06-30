@@ -132,15 +132,28 @@ def display_code_analysis():
                     save_analysis(uploaded_file.name, result)
 
     st.write("## Previous Analyses")
+    display_previous_analyses()
+
+def display_previous_analyses():
+    st.subheader("Previous Analyses")
     analyses = load_analyses()
+
     if analyses:
-        for analysis_id, filename, result, timestamp in analyses:
-            with st.expander(f"Analysis for {filename} (Uploaded on {timestamp})"):
-                st.write(result)
-                if st.button(f"Load Analysis {analysis_id}", key=f"load_{analysis_id}"):
-                    loaded_result = load_analysis_by_id(analysis_id)
+        df = pd.DataFrame(analyses, columns=["ID", "Filename", "Result", "Timestamp"])
+        df["Timestamp"] = pd.to_datetime(df["Timestamp"])
+        df.sort_values(by="Timestamp", ascending=False, inplace=True)
+
+        for _, row in df.iterrows():
+            with st.expander(f"Analysis for {row['Filename']} (Uploaded on {row['Timestamp'].strftime('%Y-%m-%d %H:%M:%S')})"):
+                st.markdown(f"**Filename:** {row['Filename']}")
+                st.markdown(f"**Timestamp:** {row['Timestamp'].strftime('%Y-%m-%d %H:%M:%S')}")
+                st.markdown("**Result:**")
+                st.code(row['Result'])
+
+                if st.button(f"Load Analysis {row['ID']}", key=f"load_{row['ID']}"):
+                    loaded_result = load_analysis_by_id(row['ID'])
                     if loaded_result:
-                        st.write("## Loaded Analysis Result")
+                        st.markdown("## Loaded Analysis Result")
                         st.text(loaded_result)
     else:
         st.write("No previous analyses found.")

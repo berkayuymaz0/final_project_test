@@ -3,12 +3,10 @@ import tempfile
 import os
 import pandas as pd
 import logging
-from analysis_tools import run_analysis_tool, check_mypy, check_black, check_safety
-from ai_interaction import get_ai_suggestions, scan_file_with_virustotal, get_file_report
+from analysis_tools import run_analysis_tool
+from ai_interaction import get_ai_suggestions
 from utils import generate_summary_statistics, plot_indicator_distribution
 from database_code import save_analysis, load_analyses, load_analysis_by_id
-from radon.complexity import cc_visit
-from radon.metrics import mi_visit, mi_rank
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -18,79 +16,83 @@ def format_output(output, error):
     """Format the output and error messages for better readability."""
     return output.replace('\n', '<br>'), error.replace('\n', '<br>')
 
-def analyze_python_file(file_path):
-    """Analyze a single Python file and return results and detailed information."""
+def analyze_file(file_path, file_type):
+    """Analyze a single file based on its type and return results and detailed information."""
     results = []
-    tools = ["bandit", "pylint", "flake8", "mypy", "black", "safety"]
-    
-    for tool in tools:
-        if tool == "mypy":
-            output, error = check_mypy(file_path)
-        elif tool == "black":
-            output, error = check_black(file_path)
-        elif tool == "safety":
-            output, error = check_safety()
-        else:
-            output, error = run_analysis_tool(tool, file_path)
 
+    if file_type == "python":
+        tools = ["bandit", "pylint", "flake8", "mypy", "black", "safety"]
+    elif file_type == "c":
+        tools = ["cppcheck", "clang-analyzer", "clang-format"]
+    elif file_type == "javascript":
+        tools = ["eslint"]
+    else:
+        st.error("Unsupported file type.")
+        return results
+
+    for tool in tools:
+        output, error = run_analysis_tool(tool, file_path)
         formatted_output, formatted_error = format_output(output, error)
         results.append({
-            "Tool": tool.capitalize(),
+            "Tool": tool.replace('-', ' ').capitalize(),
             "Output": formatted_output,
             "Error": formatted_error
         })
-    
-    # Add complexity analysis
-    with open(file_path, 'r') as f:
-        code = f.read()
-        complexity_analysis = cc_visit(code)
-        maintainability_index = mi_visit(code, False)  # Use False for single mode
-        
-        complexity_output = "<br>".join([str(c) for c in complexity_analysis])
-        mi_rank_value = mi_rank(maintainability_index)
-        mi_output = f"Maintainability Index: {maintainability_index} ({mi_rank_value})"
-        
-        results.append({
-            "Tool": "Complexity",
-            "Output": complexity_output,
-            "Error": ""
-        })
-        
-        results.append({
-            "Tool": "Maintainability Index",
-            "Output": mi_output,
-            "Error": ""
-        })
-    
+
+        if tool == "clang-format":
+            with open(file_path, 'r') as f:
+                formatted_content = f.read()
+            results.append({
+                "Tool": "Formatted File",
+                "Output": formatted_content.replace('\n', '<br>'),
+                "Error": ""
+            })
+
     return results
 
-def analyze_python_files(files):
-    """Analyze multiple Python files and return results and detailed information."""
+def analyze_files(files):
+    """Analyze multiple files and return results and detailed information."""
     all_details = []
     for uploaded_file in files:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".py") as temp_file:
+        file_extension = os.path.splitext(uploaded_file.name)[1].lower()
+        if file_extension == ".py":
+            file_type = "python"
+        elif file_extension in [".c", ".h"]:
+            file_type = "c"
+        elif file_extension in [".js"]:
+            file_type = "javascript"
+        else:
+            st.error(f"Unsupported file type: {file_extension}")
+            continue
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
             temp_file.write(uploaded_file.read())
             temp_file_path = temp_file.name
 
         try:
-            details = analyze_python_file(temp_file_path)
+            details = analyze_file(temp_file_path, file_type)
             all_details.append((uploaded_file.name, details))
         except Exception as e:
-            logger.error(f"Error analyzing Python file: {e}")
+            logger.error(f"Error analyzing file: {e}")
             st.error(f"Error analyzing {uploaded_file.name}. Please try again.")
         finally:
             os.remove(temp_file_path)
 
     return all_details
 
-def display_python_code_analysis():
-    st.subheader("Python Code Analysis")
+def display_code_analysis():
+    st.subheader("Code Analysis")
 
-    # File uploader for Python files
-    python_files = st.file_uploader("Upload your Python files here", accept_multiple_files=True, type=["py"])
-    if st.button("Analyze Python Files") and python_files:
-        with st.spinner('Analyzing Python files...'):
-            analysis_results = analyze_python_files(python_files)
+    # Settings section
+    st.sidebar.header("Analysis Settings")
+    selected_language = st.sidebar.selectbox("Select language", ["Python", "C", "JavaScript"])
+    st.sidebar.write(f"Analyzing {selected_language} files.")
+
+    # File uploader for files
+    code_files = st.file_uploader("Upload your code files here", accept_multiple_files=True, type=["py", "c", "h", "js"])
+    if st.button("Analyze Code Files") and code_files:
+        with st.spinner('Analyzing code files...'):
+            analysis_results = analyze_files(code_files)
 
             if analysis_results:
                 combined_results = []
@@ -110,7 +112,7 @@ def display_python_code_analysis():
                 st.download_button(
                     label="Download Analysis Results",
                     data="\n\n".join(combined_results),
-                    file_name="python_code_analysis_results.txt",
+                    file_name="code_analysis_results.txt",
                     mime="text/plain"
                 )
 
@@ -126,7 +128,7 @@ def display_python_code_analysis():
                 st.write("\n\n".join(all_ai_suggestions))
 
                 # Save results to database
-                for uploaded_file, result in zip(python_files, combined_results):
+                for uploaded_file, result in zip(code_files, combined_results):
                     save_analysis(uploaded_file.name, result)
 
     st.write("## Previous Analyses")
@@ -144,4 +146,4 @@ def display_python_code_analysis():
         st.write("No previous analyses found.")
 
 if __name__ == "__main__":
-    display_python_code_analysis()
+    display_code_analysis()

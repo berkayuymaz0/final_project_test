@@ -6,3 +6,7 @@ __pycache__/
 __pycache__/
 .venv/
 venv/
+**/code_analysis_results.db
+**//data.db
+**/ole_analysis_results.db
+**/data.db

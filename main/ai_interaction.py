@@ -1,11 +1,14 @@
-import os
-import logging
-from dotenv import load_dotenv
+from langchain_community.chat_models import ChatOllama
 from langchain.text_splitter import CharacterTextSplitter
+import streamlit as st
+import os
+from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import FAISS
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
+from PyPDF2 import PdfReader
+import logging
 import requests
 
 # Load environment variables from .env file
@@ -23,7 +26,19 @@ def get_vectorstore(text_chunks):
     return vectorstore
 
 def get_conversation_chain(vectorstore, temp, model):
-    llm = ChatOpenAI(temperature=temp, model_name=model)
+    if model == 'llama3':
+        llm = ChatOllama(
+            model='llama3',
+            temperature=temp,
+            num_gpu=1,
+            top_p=0.9,
+            base_url='http://localhost:11434',
+            max_tokens=10000,
+            max_tokens_history=10000,
+        )
+    else:
+        llm = ChatOpenAI(temperature=temp, model_name=model)
+    
     memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
     conversation_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
@@ -32,7 +47,7 @@ def get_conversation_chain(vectorstore, temp, model):
     )
     return conversation_chain
 
-def ask_question_to_openai(question, context, model="gpt-3.5-turbo"):
+def ask_question_to_openai(question, context, model="llama3"):
     try:
         temp = 0.7  # default temperature
         vectorstore = get_vectorstore(context.split("\n\n"))
@@ -50,7 +65,7 @@ def ask_question_to_openai(question, context, model="gpt-3.5-turbo"):
         logger.error(f"An error occurred while communicating with the OpenAI API via LangChain: {e}")
         return f"An error occurred while communicating with the OpenAI API: {e}"
 
-def get_ai_suggestions(combined_output, context="code analysis", model="gpt-3.5-turbo"):
+def get_ai_suggestions(combined_output, context="code analysis", model="llama3"):
     try:
         prompt_context = {
             "code analysis": (

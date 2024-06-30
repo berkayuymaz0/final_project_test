@@ -12,5 +12,9 @@ mypy
 black
 safety
 requests
-openai
+langchain
+langchain_openai
+langchain_community
 python-dotenv
+pandas
+matplotlib

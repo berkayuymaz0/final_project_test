@@ -213,7 +213,7 @@ def main():
             display_pdf_question_answering()
         elif sidebar_option == "OLE Tool":
             display_ole_tool()
-        elif sidebar_option == "Python Code Analysis":
+        elif sidebar_option == "Code Analysis":
             display_code_analysis()
         elif sidebar_option == "Security Scans":
             display_security_scans()

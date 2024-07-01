@@ -206,7 +206,7 @@ def main():
 
         sidebar_option = st.sidebar.selectbox(
             "Choose a section",
-            ("PDF Question Answering", "OLE Tool", "Python Code Analysis", "Security Scans", "Dashboard", "Settings")
+            ("PDF Question Answering", "OLE Tool", "Code Analysis", "Security Scans", "Dashboard", "Settings")
         )
 
         if sidebar_option == "PDF Question Answering":

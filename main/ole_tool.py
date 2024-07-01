@@ -73,11 +73,7 @@ def display_ole_tool():
     st.subheader("OLE Tool")
 
     # File uploader for OLE files
-<<<<<<< HEAD
     ole_files = st.file_uploader("Upload your OLE files here", accept_multiple_files=True, type=["docx", "xls", "ppt","doc","xlsb","pptx"])
-=======
-    ole_files = st.file_uploader("Upload your OLE files here", accept_multiple_files=True, type=["docx", "xls", "ppt", "doc", "xlsb", "pptx"])
->>>>>>> e2179e6f871449c70f065b78a9f495f980e10756
     if st.button("Analyze OLE Files") and ole_files:
         with st.spinner('Analyzing OLE files...'):
             analysis_results = analyze_ole_files(ole_files)

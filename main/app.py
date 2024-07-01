@@ -1,3 +1,4 @@
+import dis
 import streamlit as st
 import sqlite3
 import bcrypt
@@ -54,9 +55,94 @@ def logout_user():
     st.session_state.email = ""
     st.experimental_rerun()
 
+def display_landing_page():
+    st.markdown("""
+        <style>
+            .hero {
+                text-align: center;
+                margin-bottom: 40px;
+            }
+            .hero h1 {
+                font-size: 3em;
+                margin: 0;
+                padding: 0;
+            }
+            .hero h2 {
+                font-size: 1.5em;
+                color: #888;
+                margin: 0;
+                padding: 10px 0 0 0;
+            }
+            .feature {
+                text-align: center;
+                margin: 20px 0;
+            }
+            .feature img {
+                max-width: 100px;
+                margin-bottom: 10px;
+            }
+            .cta {
+                text-align: center;
+                margin: 40px 0;
+            }
+            .cta button {
+                font-size: 1.2em;
+                padding: 10px 20px;
+            }
+            .feature-icons {
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin: 20px 0;
+            }
+            .feature-icons div {
+                flex: 1;
+                text-align: center;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Hero Section
+    st.markdown("""
+        <div class="hero">
+            <h1>AppSec</h1>
+            <h2>Comprehensive tools to keep your code secure and efficient</h2>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Feature Highlights
+    st.markdown("""
+        <div class="feature-icons">
+            <div>
+                <img src="https://img.icons8.com/ios-filled/100/000000/pdf.png" alt="PDF Analysis"/>
+                <h3>Analyze PDF Documents</h3>
+                <p>Upload and extract information from PDF files with ease.</p>
+            </div>
+            <div>
+                <img src="https://img.icons8.com/ios-filled/100/000000/lock.png" alt="Security Scans"/>
+                <h3>Security Scans</h3>
+                <p>Perform thorough security scans on various file types to detect vulnerabilities.</p>
+            </div>
+            <div>
+                <img src="https://img.icons8.com/ios-filled/100/000000/code.png" alt="Code Analysis"/>
+                <h3>Code Analysis</h3>
+                <p>Use state-of-the-art tools to analyze your code for potential issues and receive AI-driven suggestions for improvements.</p>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+        <div class="feature">
+            <img src="https://d1csarkz8obe9u.cloudfront.net/posterpreviews/wrench-icon-design-template-ae874f6f5a9683885bceba8323ceb0cb_screen.jpg?ts=1625755658" alt="OLE Tool"/>
+            <h3>OLE Tool</h3>
+            <p>Analyze OLE files to identify potential security threats.</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+
 def main():
-    st.set_page_config(page_title="Professional Security Analysis Tool", layout="wide")
-    st.title("Professional Security Analysis Tool")
+    st.set_page_config(page_title="AppSec", layout="wide")
+    st.sidebar.title("Menu")
 
     # Initialize session state variables
     if 'logged_in' not in st.session_state:
@@ -77,11 +163,11 @@ def main():
         if st.session_state.logged_in:
             st.subheader(f"Welcome {st.session_state.username}")
         else:
-            st.subheader("Home")
+            display_landing_page()
 
     if not st.session_state.logged_in:
         if choice == "Login":
-            st.subheader("Login Section")
+            display_landing_page()
 
             email = st.sidebar.text_input("Email", key="login_email")
             password = st.sidebar.text_input("Password", type='password', key="login_password")

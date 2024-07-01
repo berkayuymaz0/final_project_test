@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import logging
 from analysis_tools import run_analysis_tool
-from ai_interaction import get_ai_suggestions
+from ai_interaction import get_ai_suggestions, ask_question_to_openai
 from utils import generate_summary_statistics, plot_indicator_distribution
 from database_code import save_analysis, load_analyses, load_analysis_by_id
 
@@ -90,6 +90,11 @@ def display_code_analysis():
 
     # File uploader for files
     code_files = st.file_uploader("Upload your code files here", accept_multiple_files=True, type=["py", "c", "h", "js"])
+    
+    # Initialize chat history for follow-up questions
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
     if st.button("Analyze Code Files") and code_files:
         with st.spinner('Analyzing code files...'):
             analysis_results = analyze_files(code_files)
@@ -131,32 +136,33 @@ def display_code_analysis():
                 for uploaded_file, result in zip(code_files, combined_results):
                     save_analysis(uploaded_file.name, result)
 
-    st.write("## Previous Analyses")
-    display_previous_analyses()
+                # Store the initial context for follow-up questions
+                st.session_state.chat_history.append({
+                    "question": "Initial Analysis",
+                    "context": combined_context
+                })
 
-def display_previous_analyses():
-    st.subheader("Previous Analyses")
-    analyses = load_analyses()
+    # Follow-up questions
+    st.subheader("Ask Follow-up Questions")
+    follow_up_question = st.text_input("Your question about the analysis:", key="follow_up_question")
+    if st.button("Ask Question"):
+        if follow_up_question:
+            context = st.session_state.chat_history[-1]['context']
+            answer = ask_question_to_openai(follow_up_question, context, model="llama3")
+            st.session_state.chat_history.append({
+                "question": follow_up_question,
+                "answer": answer,
+                "context": context
+            })
+            st.write(f"**Question:** {follow_up_question}")
+            st.write(f"**Answer:** {answer}")
 
-    if analyses:
-        df = pd.DataFrame(analyses, columns=["ID", "Filename", "Result", "Timestamp"])
-        df["Timestamp"] = pd.to_datetime(df["Timestamp"])
-        df.sort_values(by="Timestamp", ascending=False, inplace=True)
-
-        for _, row in df.iterrows():
-            with st.expander(f"Analysis for {row['Filename']} (Uploaded on {row['Timestamp'].strftime('%Y-%m-%d %H:%M:%S')})"):
-                st.markdown(f"**Filename:** {row['Filename']}")
-                st.markdown(f"**Timestamp:** {row['Timestamp'].strftime('%Y-%m-%d %H:%M:%S')}")
-                st.markdown("**Result:**")
-                st.code(row['Result'])
-
-                if st.button(f"Load Analysis {row['ID']}", key=f"load_{row['ID']}"):
-                    loaded_result = load_analysis_by_id(row['ID'])
-                    if loaded_result:
-                        st.markdown("## Loaded Analysis Result")
-                        st.text(loaded_result)
-    else:
-        st.write("No previous analyses found.")
+    # Display chat history
+    st.subheader("Chat History")
+    for chat in st.session_state.chat_history:
+        st.write(f"**Question:** {chat['question']}")
+        if 'answer' in chat:
+            st.write(f"**Answer:** {chat['answer']}")
 
 if __name__ == "__main__":
     display_code_analysis()

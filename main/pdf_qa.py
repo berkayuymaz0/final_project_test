@@ -12,11 +12,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Prompts
-gen_prompt = '''
-    You are a general assistant AI chatbot here to assist the user based on the PDFs they uploaded,
-    and the subsequent openAI embeddings. Please assist the user to the best of your knowledge based on 
-    uploads, embeddings and the following user input. USER INPUT: 
+security_analyst_prompt = '''
+    You are a Security Analyst AI chatbot here to assist the user based on the PDFs they uploaded,
+    and the subsequent OpenAI embeddings. Please provide detailed analysis and insights based on 
+    the uploads, embeddings, and the following user input. USER INPUT: 
 '''
+
 
 acc_prompt = '''
     You are an academic assistant AI chatbot here to assist the user based on the academic PDFs they uploaded,
@@ -26,21 +27,19 @@ acc_prompt = '''
     based on uploads, embeddings and the following user input. USER INPUT: 
 '''
 
-witty_prompt = '''
-    You are a witty assistant AI chatbot here to assist the user based on the PDFs they uploaded,
-    and the subsequent openAI embeddings. This witty persona should make you come off as lighthearted,
-    be joking responses and original, with the original user question still being answered.
-    Please assist the user to the best of your knowledge, with this comedic persona
-    based on uploads, embeddings and the following user input. USER INPUT: 
+code_analyst_prompt = '''
+    You are a Code Analyst AI chatbot here to assist the user with code-related queries based on 
+    the PDFs they uploaded, and the subsequent OpenAI embeddings. Provide expert advice and insights 
+    based on the uploads, embeddings, and the following user input. USER INPUT: 
 '''
 
 def set_prompt(personality):
-    if personality == 'general assistant':
-        return gen_prompt
+    if personality == 'security analyst':
+        return security_analyst_prompt
     elif personality == 'academic':
         return acc_prompt
-    elif personality == 'witty':
-        return witty_prompt
+    elif personality == 'code analyst':
+        return code_analyst_prompt
 
 def display_pdf_question_answering():
     st.title("PDF Question Answering Chatbot")
@@ -62,8 +61,8 @@ def display_pdf_question_answering():
 
     # Chatbot settings
     st.sidebar.header("Chat Bot Settings")
-    model = st.selectbox(label='Model', options=['gpt-3.5-turbo','llama3'])
-    personality = st.sidebar.selectbox('Personality', options=['general assistant', 'academic', 'witty'])
+    model = st.selectbox(label='Model', options=['gpt-3.5-turbo','gpt-4o','llama3'])
+    personality = st.sidebar.selectbox('Personality', options=['security analyst', 'academic', 'code analyst'])
     temperature = st.sidebar.slider("Temperature", 0.0, 1.0, 0.5)
     prompt = set_prompt(personality)
 

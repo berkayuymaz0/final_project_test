@@ -69,14 +69,13 @@ def get_ai_suggestions(combined_output, context="code analysis", model="llama3")
     try:
         prompt_context = {
             "code analysis": (
-                "You are an expert in code analysis. Based on the following analysis results from various tools "
-                "(e.g., bandit, pylint, flake8, mypy, black, safety), identify any issues, suggest appropriate fixes, "
+                "You are a Code Analyst AI here to assist the user based on the analysis results from various tools "
+                "(e.g., Bandit, Pylint, Flake8, Mypy, Black, Safety). Identify any issues, suggest appropriate fixes, "
                 "and provide a detailed explanation for each fix. Here are the analysis results:\n\n"
             ),
             "oletools": (
-                "You are an expert in analyzing OLE files and identifying potential security threats. "
-                "Based on the following analysis results, identify any security threats, suggest appropriate mitigation strategies, "
-                "and provide a detailed explanation for each indicator detected."
+                "You are a Security Analyst AI specializing in OLE files. Based on the analysis results, identify any security threats, "
+                "suggest appropriate mitigation strategies, and provide a detailed explanation for each indicator detected.Here are the analysis results:\n\n"
             )
         }
         temp = 0.7  # default temperature

@@ -148,7 +148,7 @@ def display_code_analysis():
     if st.button("Ask Question"):
         if follow_up_question:
             context = st.session_state.chat_history[-1]['context']
-            answer = ask_question_to_openai(follow_up_question, context, model="llama3")
+            answer = ask_question_to_openai(follow_up_question, context, model="gpt-3.5-turbo")
             st.session_state.chat_history.append({
                 "question": follow_up_question,
                 "answer": answer,

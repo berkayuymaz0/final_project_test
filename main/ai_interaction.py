@@ -47,7 +47,7 @@ def get_conversation_chain(vectorstore, temp, model):
     )
     return conversation_chain
 
-def ask_question_to_openai(question, context, model="llama3"):
+def ask_question_to_openai(question, context, model="gpt-3.5-turbo"):
     try:
         temp = 0.7  # default temperature
         vectorstore = get_vectorstore(context.split("\n\n"))
@@ -65,7 +65,7 @@ def ask_question_to_openai(question, context, model="llama3"):
         logger.error(f"An error occurred while communicating with the OpenAI API via LangChain: {e}")
         return f"An error occurred while communicating with the OpenAI API: {e}"
 
-def get_ai_suggestions(combined_output, context="code analysis", model="llama3"):
+def get_ai_suggestions(combined_output, context="code analysis", model="gpt-3.5-turbo"):
     try:
         prompt_context = {
             "code analysis": (
